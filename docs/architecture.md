@@ -83,13 +83,51 @@ Audio player → HTTP GET → Icecast :8000/live/[mount]
 
 | File | Role | Rendering |
 |------|------|-----------|
-| `app/layout.tsx` | Root layout, fonts, dark mode | Server |
-| `app/page.tsx` | Live streams listing | Server (dynamic) |
-| `app/login/page.tsx` | Login form | Client (static shell) |
+| `app/layout.tsx` | Root layout, Geist fonts | Server |
+| `app/page.tsx` | Featured, live streams, channels | Server (dynamic) |
+| `app/login/page.tsx` | Branded login form | Client (static shell) |
 | `app/register/page.tsx` | Registration form | Client (static shell) |
 | `app/dashboard/page.tsx` | DJ controls + server actions | Server (dynamic) |
 | `app/profile/page.tsx` | Profile view | Server (dynamic) |
 | `middleware.ts` | Auth guard + session refresh | Edge |
+
+### UI Components
+
+| Component | Type | Role |
+|-----------|------|------|
+| `Sidebar` | Server | Fixed left nav with Home/Dashboard/Profile links, active state highlighting |
+| `Topbar` | Server | Sticky top bar, auth-aware (shows Login/Sign Up or user email) |
+| `RecordingsManager` | Client | Fetch + display + delete recordings via API |
+
+### CSS Design System (`globals.css`)
+
+The design system is inspired by DI.FM and uses custom CSS classes (not Tailwind utilities) for all visual elements:
+
+| Class | Purpose |
+|-------|---------|
+| `.sidebar`, `.sidebar-link`, `.sidebar-link-active` | Fixed left navigation |
+| `.topbar`, `.topbar-btn-primary`, `.topbar-btn-outline` | Sticky top bar |
+| `.hero-card`, `.hero-card-overlay` | Wide featured cards with artwork |
+| `.stream-card`, `.stream-card-overlay`, `.stream-card-live` | Square channel tiles with live badges |
+| `.card-row` | Horizontal-scrolling card container |
+| `.section-title` | Section headers with blue underline |
+| `.auth-page`, `.auth-card` | Centered auth forms |
+| `.form-input`, `.form-btn-blue`, `.form-btn-green` | Styled form elements |
+| `.dash-section`, `.config-panel` | Dashboard section cards |
+| `.stream-row`, `.recording-row` | List item rows |
+| `.live-dot-sm` | Pulsing live indicator animation |
+
+**Color palette:**
+
+| Token | Hex | Usage |
+|-------|-----|-------|
+| `--background` | `#0d1527` | Page background |
+| `--surface` | `#162040` | Card/panel backgrounds |
+| `--surface-hover` | `#1c2a52` | Hover state |
+| `--accent` | `#3b7bf5` | Primary blue (buttons, links, active states) |
+| `--accent-hover` | `#5a93ff` | Blue hover state |
+| `--muted` | `#7a8bb5` | Secondary text |
+| `--border-color` | `#1e2d54` | Borders |
 
 ### Supabase Layer
 

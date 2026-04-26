@@ -1,8 +1,22 @@
 # Streamz
 
-**Live DJ streaming platform** built with Next.js 16, Supabase, and Icecast.
+**Live DJ streaming platform** built with Next.js 16, Supabase, and Icecast — styled after [DI.FM](https://di.fm).
 
-DJs register, create stream mounts, and broadcast live audio through Icecast. Listeners browse live streams on the home page. Recordings are automatically captured and managed through the dashboard.
+DJs register, create stream mounts, and broadcast live audio through Icecast. Listeners browse live streams in a rich, art-heavy interface with horizontal-scrolling card rows, a fixed sidebar, and a sticky top bar. Recordings are automatically captured and managed through the dashboard.
+
+---
+
+## Design
+
+The UI is inspired by **DI.FM** (Digitally Imported) — a premium electronic music streaming platform:
+
+- **Deep navy palette** — `#0d1527` background, `#162040` card surfaces, `#3b7bf5` blue accent
+- **Fixed left sidebar** — navigation for Home, Dashboard, Profile
+- **Sticky top bar** — auth state aware (Login/Sign Up or user email)
+- **Horizontal-scrolling card rows** — featured hero cards (wide) and channel tiles (square)
+- **Art-heavy stream cards** — full-bleed artwork with gradient overlays, live badges, hover scale
+- **Branded auth pages** — centered cards with gradient logo, styled inputs, uppercase labels
+- **Responsive** — sidebar collapses on mobile
 
 ---
 
@@ -36,7 +50,7 @@ DJs register, create stream mounts, and broadcast live audio through Icecast. Li
 | Framework | Next.js (App Router, Turbopack) | 16.2.4 |
 | Language | TypeScript | 5.x |
 | UI | React | 19.2.4 |
-| Styling | Tailwind CSS | 4.x |
+| Styling | Tailwind CSS 4 + custom CSS design system | 4.x |
 | Auth & DB | Supabase (`@supabase/ssr`) | 0.10.x |
 | Streaming | Icecast | 2.x |
 | Containerization | Docker Compose | v2 |
@@ -108,12 +122,12 @@ POSTGRES_PASSWORD=your_db_pw
 ```
 streamz/
 ├── app/
-│   ├── layout.tsx              # Root layout (Geist fonts, dark mode)
-│   ├── page.tsx                # Home — live streams listing
-│   ├── globals.css             # Tailwind + CSS custom properties
+│   ├── layout.tsx              # Root layout (Geist fonts)
+│   ├── page.tsx                # Home — featured, live, channels
+│   ├── globals.css             # DI.FM-style design system
 │   ├── login/page.tsx          # Login (client component)
 │   ├── register/page.tsx       # Registration (client component)
-│   ├── dashboard/page.tsx      # DJ dashboard (server component + actions)
+│   ├── dashboard/page.tsx      # DJ dashboard (server + actions)
 │   ├── profile/page.tsx        # User profile (server component)
 │   └── api/
 │       └── recordings/
@@ -121,14 +135,22 @@ streamz/
 │           └── [name]/
 │               └── route.ts    # DELETE — remove a recording
 ├── components/
-│   └── RecordingsManager.tsx   # Client component for recordings CRUD
+│   ├── Sidebar.tsx             # Fixed left navigation sidebar
+│   ├── Topbar.tsx              # Sticky top bar (auth-aware)
+│   └── RecordingsManager.tsx   # Client component for recordings
 ├── lib/
 │   └── supabase/
 │       ├── client.ts           # Browser Supabase client
-│       └── server.ts           # Server Supabase client (async cookies)
+│       └── server.ts           # Server Supabase client (async)
+├── public/
+│   └── art/                    # Generated channel artwork
+│       ├── 1.png               # Purple/blue neon cityscape
+│       ├── 2.png               # Orange/magenta turntable
+│       ├── 3.png               # Teal bioluminescent
+│       └── 4.png               # Green matrix vinyl
 ├── types/
-│   └── supabase.ts             # Generated Database types
-├── middleware.ts                # Auth guard (Supabase session refresh)
+│   └── supabase.ts             # Database types
+├── middleware.ts                # Auth guard (session refresh)
 ├── docker-compose.yml          # Icecast + Postgres + Next.js
 ├── icecast.xml                 # Icecast server configuration
 ├── Dockerfile                  # Production build
@@ -147,9 +169,9 @@ streamz/
 
 | Route | Type | Auth | Description |
 |-------|------|------|-------------|
-| `/` | Server | No | Home page — lists all live streams |
-| `/login` | Client | No | Email/password login |
-| `/register` | Client | No | Account registration |
+| `/` | Server | No | Home — featured hero cards, live streams, popular channels |
+| `/login` | Client | No | Branded login card with gradient logo |
+| `/register` | Client | No | Registration with DJ Name field |
 | `/dashboard` | Server | Yes | DJ control panel — streams, recordings, config |
 | `/profile` | Server | Yes | User profile viewer |
 | `/api/recordings` | API | Yes | `GET` — list MP3 recordings |

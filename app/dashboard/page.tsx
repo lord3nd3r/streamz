@@ -34,6 +34,23 @@ export default async function Dashboard() {
     }
   }
 
+  async function updateGenre(formData: FormData) {
+    'use server'
+    try {
+      const supabase = await createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const streamId = formData.get('stream_id') as string
+      const genre = formData.get('genre') as string
+      const { error } = await supabase.from('live_streams').update({ genre }).eq('id', streamId).eq('dj_id', user.id)
+      if (error) throw error
+      revalidatePath('/')
+      revalidatePath('/dashboard')
+    } catch (err) {
+      console.error('Error updating genre:', err)
+    }
+  }
+
   async function createStream(formData: FormData) {
     'use server'
     try {
@@ -41,12 +58,13 @@ export default async function Dashboard() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       const name = formData.get('name') as string
+      const genre = formData.get('genre') as string || 'Other'
       if (!name) return
       const { data: p } = await supabase.from('profiles').select('username').eq('id', user.id).single()
       const username = p?.username || 'dj'
       const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
       const mount = `/live/${username}-${slug}-${Date.now().toString().slice(-6)}`
-      const { error } = await supabase.from('live_streams').insert({ dj_id: user.id, name, mount, is_live: true })
+      const { error } = await supabase.from('live_streams').insert({ dj_id: user.id, name, mount, genre, is_live: true })
       if (error) throw error
       revalidatePath('/')
       revalidatePath('/dashboard')
@@ -54,6 +72,8 @@ export default async function Dashboard() {
       console.error('Error creating stream:', err)
     }
   }
+  
+  const GENRES = ['Progressive', 'Deep House', 'Techno', 'Trance', 'Breakbeats', 'Drum & Bass', 'Dubstep', 'Hardstyle', 'Psytrance', 'Other']
 
   return (
     <>
@@ -70,8 +90,11 @@ export default async function Dashboard() {
           {/* Create Stream */}
           <div className="dash-section">
             <div className="dash-section-title">Start New Stream</div>
-            <form action={createStream} style={{ display: 'flex', gap: '12px', maxWidth: '480px' }}>
-              <input name="name" type="text" required placeholder="My Live Set" className="form-input" />
+            <form action={createStream} style={{ display: 'flex', gap: '12px', maxWidth: '600px' }}>
+              <input name="name" type="text" required placeholder="My Live Set" className="form-input" style={{ flex: 1 }} />
+              <select name="genre" className="form-input" style={{ width: '150px' }}>
+                {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
+              </select>
               <button type="submit" className="btn-go-live btn-go-live-off" style={{ whiteSpace: 'nowrap' }}>
                 🎧 Go Live
               </button>
@@ -83,20 +106,34 @@ export default async function Dashboard() {
             <div className="dash-section-title">Your Streams</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {streams && streams.length > 0 ? streams.map((stream: LiveStream) => (
-                <div key={stream.id} className="stream-row">
-                  <div>
+                <div key={stream.id} className="stream-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 600, color: '#fff', marginBottom: '2px' }}>{stream.name}</div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
                       {stream.mount} • {stream.listeners_count || 0} listeners
                     </div>
                   </div>
-                  <form action={toggleStream}>
-                    <input type="hidden" name="stream_id" value={stream.id} />
-                    <input type="hidden" name="is_live" value={stream.is_live.toString()} />
-                    <button type="submit" className={`btn-go-live ${stream.is_live ? 'btn-go-live-on' : 'btn-go-live-off'}`}>
-                      {stream.is_live ? 'Go Offline' : 'Go Live'}
-                    </button>
-                  </form>
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <form action={updateGenre} style={{ display: 'flex', gap: '8px' }}>
+                      <input type="hidden" name="stream_id" value={stream.id} />
+                      <select 
+                        name="genre" 
+                        defaultValue={(stream as any).genre || 'Other'} 
+                        className="form-input" 
+                        style={{ padding: '6px 12px', height: 'auto', fontSize: '0.8rem' }}
+                        onChange={(e) => e.target.form?.requestSubmit()}
+                      >
+                        {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
+                      </select>
+                    </form>
+                    <form action={toggleStream}>
+                      <input type="hidden" name="stream_id" value={stream.id} />
+                      <input type="hidden" name="is_live" value={stream.is_live.toString()} />
+                      <button type="submit" className={`btn-go-live ${stream.is_live ? 'btn-go-live-on' : 'btn-go-live-off'}`}>
+                        {stream.is_live ? 'Go Offline' : 'Go Live'}
+                      </button>
+                    </form>
+                  </div>
                 </div>
               )) : (
                 <p style={{ color: 'var(--muted)', fontSize: '0.875rem' }}>No streams yet. Create one above!</p>

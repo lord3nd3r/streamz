@@ -227,11 +227,14 @@ export default function StreamPage() {
                 <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                   <span>👥 {stream.listeners_count || 0} Clubbers</span>
                   <button 
-                    onClick={() => {
+                    onClick={(e) => {
                       const mount = stream.mount.startsWith('/live/') ? stream.mount.substring(6) : stream.mount.replace(/^\//, '');
                       const url = `https://streamz.lol/live/${mount}`;
                       navigator.clipboard.writeText(url);
-                      alert('Copied Direct MP3 URL!');
+                      const btn = e.currentTarget;
+                      const originalText = btn.innerText;
+                      btn.innerText = '✅ Copied!';
+                      setTimeout(() => { btn.innerText = originalText; }, 2000);
                     }}
                     style={{ 
                       background: 'rgba(255,255,255,0.05)', 

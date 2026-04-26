@@ -92,7 +92,10 @@ export default function Home({ liveStreams: initialLiveStreams, userEmail }: { l
                                   const mount = stream.mount.startsWith('/live/') ? stream.mount.substring(6) : stream.mount.replace(/^\//, '');
                                   const url = `https://streamz.lol/live/${mount}`;
                                   navigator.clipboard.writeText(url);
-                                  alert('Copied Direct MP3 URL!');
+                                  const btn = e.currentTarget;
+                                  const originalText = btn.innerText;
+                                  btn.innerText = '✅ Copied!';
+                                  setTimeout(() => { btn.innerText = originalText; }, 2000);
                                 }}
                                 title="Copy direct MP3 link"
                                 style={{ 

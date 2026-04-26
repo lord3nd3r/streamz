@@ -223,8 +223,29 @@ export default function StreamPage() {
                 )}
               </button>
               
-              <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', color: 'var(--muted)', fontSize: '0.9rem', fontWeight: 600 }}>
-                <span>👥 {stream.listeners_count || 0} Clubbers</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', color: 'var(--muted)', fontSize: '0.9rem', fontWeight: 600 }}>
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                  <span>👥 {stream.listeners_count || 0} Clubbers</span>
+                  <button 
+                    onClick={() => {
+                      const url = `https://streamz.lol/live/${stream.mount.replace(/^\//, '')}`;
+                      navigator.clipboard.writeText(url);
+                      alert('Copied Direct MP3 URL!');
+                    }}
+                    style={{ 
+                      background: 'rgba(255,255,255,0.05)', 
+                      border: '1px solid var(--border-color)', 
+                      color: 'var(--accent)', 
+                      fontSize: '11px', 
+                      padding: '4px 10px', 
+                      borderRadius: '12px',
+                      cursor: 'pointer',
+                      fontWeight: 700
+                    }}
+                  >
+                    🔗 MP3 URL
+                  </button>
+                </div>
                 <Link href="/" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 700 }}>← BACK TO HALL</Link>
               </div>
             </div>

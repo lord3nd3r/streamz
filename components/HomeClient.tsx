@@ -81,8 +81,32 @@ export default function Home({ liveStreams: initialLiveStreams, userEmail }: { l
                             <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent)', marginBottom: '2px' }}>
                               DJ {stream.profiles?.username || 'Guest'}
                             </div>
-                            <div className="stream-card-meta">
-                              {stream.listeners_count || 0} listening
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                              <div className="stream-card-meta">
+                                {stream.listeners_count || 0} listening
+                              </div>
+                              <button 
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  const url = `https://streamz.lol/live/${stream.mount.replace(/^\//, '')}`;
+                                  navigator.clipboard.writeText(url);
+                                  alert('Copied Direct MP3 URL!');
+                                }}
+                                title="Copy direct MP3 link"
+                                style={{ 
+                                  background: 'rgba(255,255,255,0.1)', 
+                                  border: 'none', 
+                                  color: 'var(--accent)', 
+                                  fontSize: '10px', 
+                                  padding: '2px 6px', 
+                                  borderRadius: '4px',
+                                  cursor: 'pointer',
+                                  fontWeight: 700
+                                }}
+                              >
+                                🔗 MP3
+                              </button>
                             </div>
                           </div>
                           <div 

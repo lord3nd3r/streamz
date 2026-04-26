@@ -142,16 +142,28 @@ export default function LiveChat({ streamId, djId }: { streamId: string, djId: s
             {isMod && (
               <div style={{ display: 'flex', gap: '4px', marginTop: '2px' }}>
                 <button 
-                  onClick={() => supabase.from('chat_messages').delete().eq('id', msg.id)}
+                  onClick={async () => {
+                    setMessages(prev => prev.filter(m => m.id !== msg.id));
+                    const { error } = await supabase.from('chat_messages').delete().eq('id', msg.id);
+                    if (error) alert("Error deleting: " + error.message);
+                  }}
                   style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '10px' }} title="Delete Message">🗑️</button>
                 {isOp && msg.username !== username && !mods.includes(msg.username) && (
                   <button 
-                    onClick={() => supabase.from('chat_mods').insert({ stream_id: streamId, mod_username: msg.username })}
+                    onClick={async () => {
+                      setMods(prev => [...prev, msg.username]);
+                      const { error } = await supabase.from('chat_mods').insert({ stream_id: streamId, mod_username: msg.username });
+                      if (error) alert("Error making mod: " + error.message);
+                    }}
                     style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '10px' }} title="Make Mod">⭐</button>
                 )}
                 {isOp && msg.username !== username && (
                   <button 
-                    onClick={() => supabase.from('chat_bans').insert({ stream_id: streamId, banned_username: msg.username })}
+                    onClick={async () => {
+                      setBannedUsers(prev => [...prev, msg.username]);
+                      const { error } = await supabase.from('chat_bans').insert({ stream_id: streamId, banned_username: msg.username });
+                      if (error) alert("Error banning: " + error.message);
+                    }}
                     style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '10px' }} title="Ban User">🚫</button>
                 )}
               </div>

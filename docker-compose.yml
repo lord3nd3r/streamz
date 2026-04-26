@@ -24,14 +24,16 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   icecast:
-    image: mikenye/icecast
+    image: infiniteproject/icecast
     restart: unless-stopped
     ports:
       - '8000:8000'
     environment:
-      IC_SOURCE_PASSWORD: ${ICECAST_SOURCE_PASSWORD:-changeme}
-      IC_ADMIN_PASSWORD: ${ICECAST_ADMIN_PASSWORD:-changeme}
-      IC_ADMIN_USERNAME: ${ICECAST_ADMIN_USERNAME:-admin}
+      ICECAST_SOURCE_PASSWORD: ${ICECAST_SOURCE_PASSWORD:-changeme}
+      ICECAST_ADMIN_PASSWORD: ${ICECAST_ADMIN_PASSWORD:-changeme}
+      ICECAST_ADMIN_USERNAME: ${ICECAST_ADMIN_USERNAME:-admin}
+      ICECAST_HOSTNAME: ${ICECAST_HOST:-localhost}
+      ICECAST_LOCATION: Streamz
     volumes:
       - ./icecast.xml:/etc/icecast.xml
       - ./recordings:/tmp/dumpfiles

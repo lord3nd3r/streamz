@@ -12,12 +12,13 @@ export default function GlobalPlayer() {
   return (
     <div className="global-player neon-border" style={{
       position: 'fixed',
-      bottom: '20px',
-      left: '50%',
+      bottom: '24px',
+      // Center in the space remaining after the 240px sidebar
+      left: 'calc(240px + (100% - 240px) / 2)',
       transform: 'translateX(-50%)',
-      width: 'calc(100% - 40px)',
-      maxWidth: '900px',
-      height: '72px',
+      width: 'calc(100% - 240px - 48px)',
+      maxWidth: '1000px',
+      height: '76px',
       background: 'rgba(13, 21, 39, 0.85)',
       backdropFilter: 'blur(20px)',
       borderRadius: '16px',

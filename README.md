@@ -18,6 +18,7 @@ The UI is inspired by **DI.FM** (Digitally Imported) — a premium electronic mu
 - **Persistent Global Player** — audio continues playing while navigating the site
 - **Audio Visualizer** — Milkdrop-inspired canvas visualizer with 7 trippy modes (Vortex, Kaleidoscope, Tunnel, Pulse, Wave, Nebula, Prism)
 - **Genre Categorization** — Live streams are dynamically grouped into sections based on the DJ's configured genre
+- **Built-in SEO** — Automatically generated `sitemap.xml`, `robots.txt`, and rich OpenGraph/Twitter metadata for optimal search indexing
 - **Branded auth pages** — centered cards with gradient logo, styled inputs, uppercase labels
 - **Responsive** — sidebar collapses on mobile
 
@@ -127,12 +128,14 @@ POSTGRES_PASSWORD=your_db_pw
 ```
 streamz/
 ├── app/
-│   ├── layout.tsx              # Root layout (Geist fonts)
+│   ├── layout.tsx              # Root layout (Geist fonts) + Global SEO Metadata
 │   ├── page.tsx                # Home — featured, live, channels
 │   ├── globals.css             # DI.FM-style design system
+│   ├── sitemap.ts              # Automated sitemap.xml generator
+│   ├── robots.ts               # Automated robots.txt generator
 │   ├── login/page.tsx          # Login (client component)
 │   ├── register/page.tsx       # Registration (client component)
-│   ├── dashboard/page.tsx      # DJ dashboard (server + actions)
+│   ├── dashboard/page.tsx      # DJ dashboard (server actions to create, update, delete streams)
 │   ├── profile/page.tsx        # User profile (server component)
 │   └── api/
 │       └── recordings/

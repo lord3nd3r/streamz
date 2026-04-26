@@ -17,6 +17,7 @@ export default function StreamPage() {
   const [loading, setLoading] = useState(true)
   const [userEmail, setUserEmail] = useState<string | undefined>(undefined)
   const [showVisualizer, setShowVisualizer] = useState(false)
+  const [shareStatus, setShareStatus] = useState<'idle' | 'shortening' | 'copied'>('idle')
   const { activeStream, isPlaying, playStream, togglePlay } = useAudio()
   const supabase = createClient()
 
@@ -38,6 +39,29 @@ export default function StreamPage() {
     }
     fetchData()
   }, [streamId, supabase])
+
+  const handleShare = async () => {
+    setShareStatus('shortening')
+    const fullUrl = window.location.href
+    try {
+      // Using is.gd for instant URL shortening (no API key needed)
+      const res = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(fullUrl)}`)
+      const data = await res.json()
+      
+      if (data.shorturl) {
+        await navigator.clipboard.writeText(data.shorturl)
+        setShareStatus('copied')
+        setTimeout(() => setShareStatus('idle'), 3000)
+      } else {
+        throw new Error('Shortening failed')
+      }
+    } catch (err) {
+      console.error('Sharing failed:', err)
+      await navigator.clipboard.writeText(fullUrl)
+      setShareStatus('copied')
+      setTimeout(() => setShareStatus('idle'), 3000)
+    }
+  }
 
   if (loading) return <div style={{ background: 'var(--background)', height: '100vh' }} />
   if (!stream) notFound()
@@ -83,26 +107,44 @@ export default function StreamPage() {
                 </div>
               )}
               
-              <button 
-                onClick={() => setShowVisualizer(!showVisualizer)}
-                className="neon-border"
-                style={{
-                  position: 'absolute',
-                  bottom: '-20px',
-                  right: '-20px',
-                  background: 'var(--surface)',
-                  color: 'var(--accent)',
-                  padding: '8px 16px',
-                  borderRadius: '20px',
-                  fontSize: '10px',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  zIndex: 2,
-                  boxShadow: '0 4px 15px rgba(0,0,0,0.5)'
-                }}
-              >
-                {showVisualizer ? '🖼️ SHOW ART' : '🌈 SHOW VISUALS'}
-              </button>
+              <div style={{ position: 'absolute', bottom: '-20px', right: '-20px', display: 'flex', gap: '10px', zIndex: 2 }}>
+                <button 
+                  onClick={handleShare}
+                  className="neon-border"
+                  style={{
+                    background: shareStatus === 'copied' ? '#10b981' : 'var(--surface)',
+                    color: shareStatus === 'copied' ? '#fff' : 'var(--accent)',
+                    padding: '8px 16px',
+                    borderRadius: '20px',
+                    fontSize: '10px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 15px rgba(0,0,0,0.5)',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {shareStatus === 'idle' && '🔗 SHARE'}
+                  {shareStatus === 'shortening' && '⏳ ...'}
+                  {shareStatus === 'copied' && '✅ COPIED!'}
+                </button>
+
+                <button 
+                  onClick={() => setShowVisualizer(!showVisualizer)}
+                  className="neon-border"
+                  style={{
+                    background: 'var(--surface)',
+                    color: 'var(--accent)',
+                    padding: '8px 16px',
+                    borderRadius: '20px',
+                    fontSize: '10px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 15px rgba(0,0,0,0.5)'
+                  }}
+                >
+                  {showVisualizer ? '🖼️ SHOW ART' : '🌈 SHOW VISUALS'}
+                </button>
+              </div>
 
               {stream.is_live && (
                 <div style={{ 

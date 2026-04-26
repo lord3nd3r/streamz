@@ -266,7 +266,7 @@ export default function StreamPage() {
 
             {/* ── Right Column: Live Chat ── */}
             <div style={{ width: '100%', height: '600px' }}>
-              <LiveChat streamId={stream.id} />
+              <LiveChat streamId={stream.id} djId={stream.dj_id} />
             </div>
           </div>
         </div>

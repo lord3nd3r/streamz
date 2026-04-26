@@ -18,6 +18,7 @@ export default function StreamPage() {
   const [loading, setLoading] = useState(true)
   const [userEmail, setUserEmail] = useState<string | undefined>(undefined)
   const [showVisualizer, setShowVisualizer] = useState(false)
+  const [showChat, setShowChat] = useState(true)
   const [shareStatus, setShareStatus] = useState<'idle' | 'shortening' | 'copied'>('idle')
   const { activeStream, isPlaying, playStream, togglePlay } = useAudio()
   const supabase = createClient()
@@ -166,6 +167,28 @@ export default function StreamPage() {
                   >
                     {showVisualizer ? '🖼️ SHOW ART' : '🌈 SHOW VISUALS'}
                   </button>
+
+                  <button 
+                    onClick={() => setShowChat(!showChat)}
+                    className="neon-border"
+                    style={{
+                      background: 'var(--surface)',
+                      color: 'var(--accent)',
+                      padding: '10px 20px',
+                      borderRadius: '24px',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      boxShadow: '0 8px 20px rgba(0,0,0,0.6)',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      border: '1px solid var(--border-color)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    {showChat ? '💬 HIDE CHAT' : '💬 SHOW CHAT'}
+                  </button>
                 </div>
 
                 {stream.is_live && (
@@ -265,9 +288,11 @@ export default function StreamPage() {
             </div>
 
             {/* ── Right Column: Live Chat ── */}
-            <div style={{ width: '100%', height: '600px' }}>
-              <LiveChat streamId={stream.id} djId={stream.dj_id} />
-            </div>
+            {showChat && (
+              <div style={{ width: '100%', height: '600px' }}>
+                <LiveChat streamId={stream.id} djId={stream.dj_id} />
+              </div>
+            )}
           </div>
         </div>
       </div>

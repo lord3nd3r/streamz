@@ -71,8 +71,7 @@ export default function LiveChat({ streamId, djId }: { streamId: string, djId: s
       .on('postgres_changes', { 
         event: 'DELETE', 
         schema: 'public', 
-        table: 'chat_messages',
-        filter: `stream_id=eq.${streamId}` 
+        table: 'chat_messages'
       }, (payload) => {
         setMessages((prev) => prev.filter(m => m.id !== payload.old.id))
       })

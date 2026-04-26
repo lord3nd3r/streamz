@@ -1,31 +1,46 @@
-import { createClient } from '@/lib/supabase/server'
-import { notFound } from 'next/navigation'
+'use client'
+
+import { createClient } from '@/lib/supabase/client'
+import { notFound, useParams } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import { useAudio } from '@/context/AudioContext'
 
-export default async function StreamPage({ params }: { params: Promise<{ id: string }> }) {
-  // In Next.js 15+, params is a promise and must be awaited
-  const resolvedParams = await params
-  const streamId = resolvedParams.id
+export default function StreamPage({ userEmail }: { userEmail?: string }) {
+  const params = useParams()
+  const streamId = params.id as string
+  const [stream, setStream] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const { activeStream, isPlaying, playStream, togglePlay } = useAudio()
+  const supabase = createClient()
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  const { data: stream } = await supabase
-    .from('live_streams')
-    .select(`*, profiles ( username, avatar_url )`)
-    .eq('id', streamId)
-    .single()
+  useEffect(() => {
+    async function fetchStream() {
+      const { data } = await supabase
+        .from('live_streams')
+        .select(`*, profiles ( username, avatar_url )`)
+        .eq('id', streamId)
+        .single()
+      
+      if (data) {
+        setStream(data)
+      }
+      setLoading(false)
+    }
+    fetchStream()
+  }, [streamId, supabase])
 
+  if (loading) return <div style={{ background: 'var(--background)', height: '100vh' }} />
   if (!stream) notFound()
 
   return (
     <>
       <Sidebar active="home" />
-      <div className="main-content" style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-        <Topbar userEmail={user?.email} />
+      <div className="main-content" style={{ display: 'flex', flexDirection: 'column', height: '100vh', paddingBottom: '100px' }}>
+        <Topbar userEmail={userEmail} />
         
         <div style={{ 
           flex: 1, 
@@ -44,7 +59,7 @@ export default async function StreamPage({ params }: { params: Promise<{ id: str
 
           {/* ── Visualizer Content ── */}
           <div style={{ textAlign: 'center', zIndex: 1, maxWidth: '600px', width: '100%' }}>
-            <div className="beat-pulse" style={{ marginBottom: '40px', position: 'relative', display: 'inline-block' }}>
+            <div className={activeStream?.id === stream.id && isPlaying ? 'beat-pulse' : ''} style={{ marginBottom: '40px', position: 'relative', display: 'inline-block' }}>
               <Image
                 src={`/art/${(Math.abs(stream.name.charCodeAt(0) % 4) + 1)}.png`}
                 alt={stream.name}
@@ -87,15 +102,32 @@ export default async function StreamPage({ params }: { params: Promise<{ id: str
               border: '1px solid var(--border-color)',
               display: 'flex',
               flexDirection: 'column',
-              gap: '20px'
+              gap: '20px',
+              alignItems: 'center'
             }}>
-              <audio 
-                autoPlay 
-                controls 
-                style={{ width: '100%', height: '40px' }}
-                src={`${stream.mount}?t=${Date.now()}`}
-              />
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--muted)', fontSize: '0.875rem' }}>
+              <button 
+                onClick={() => activeStream?.id === stream.id ? togglePlay() : playStream(stream)}
+                style={{ 
+                  background: 'var(--accent)', 
+                  border: 'none', 
+                  width: '64px', 
+                  height: '64px', 
+                  borderRadius: '50%', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  boxShadow: '0 0 25px var(--accent)'
+                }}
+              >
+                {activeStream?.id === stream.id && isPlaying ? (
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                ) : (
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="white" style={{ marginLeft: '4px' }}><path d="M8 5v14l11-7z"/></svg>
+                )}
+              </button>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', color: 'var(--muted)', fontSize: '0.875rem' }}>
                 <span>👥 {stream.listeners_count || 0} Clubbers</span>
                 <Link href="/" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}>← Back to Hall</Link>
               </div>

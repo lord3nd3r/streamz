@@ -1,16 +1,28 @@
 'use client'
 
-import { useState } from 'react'
+import { useAudio } from '@/context/AudioContext'
 import Image from 'next/image'
 import Link from 'next/link'
 import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 
 export default function Home({ liveStreams: initialLiveStreams, userEmail }: { liveStreams: any[], userEmail?: string }) {
+  const { activeStream, isPlaying, playStream, togglePlay } = useAudio()
+
+  const handlePlayClick = (e: React.MouseEvent, stream: any) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (activeStream?.id === stream.id) {
+      togglePlay()
+    } else {
+      playStream(stream)
+    }
+  }
+
   return (
     <>
       <Sidebar active="home" />
-      <div className="main-content">
+      <div className="main-content" style={{ paddingBottom: '100px' }}>
         <Topbar userEmail={userEmail} />
 
         <div style={{ padding: '28px 32px', display: 'flex', flexDirection: 'column', gap: '40px' }}>
@@ -19,7 +31,7 @@ export default function Home({ liveStreams: initialLiveStreams, userEmail }: { l
           <section>
             <div className="section-title">🔴 Live Now</div>
             {initialLiveStreams && initialLiveStreams.length > 0 ? (
-              <div className="card-row" style={{ paddingBottom: '20px' }}>
+              <div className="card-row">
                 {initialLiveStreams.map((stream) => (
                   <Link 
                     key={stream.id} 
@@ -27,10 +39,8 @@ export default function Home({ liveStreams: initialLiveStreams, userEmail }: { l
                     style={{ textDecoration: 'none', color: 'inherit' }}
                   >
                     <div 
-                      className="stream-card neon-border"
-                      style={{ 
-                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                      }}
+                      className={`stream-card ${activeStream?.id === stream.id ? 'neon-border' : ''}`}
+                      style={{ transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}
                     >
                       <Image
                         src={`/art/${(Math.abs(stream.name.charCodeAt(0) % 4) + 1)}.png`}
@@ -39,7 +49,7 @@ export default function Home({ liveStreams: initialLiveStreams, userEmail }: { l
                         height={180}
                         className="stream-card-img"
                       />
-                      <div className="stream-card-live pulse-glow">
+                      <div className={`stream-card-live ${activeStream?.id === stream.id && isPlaying ? 'pulse-glow' : ''}`}>
                         <span className="live-dot-sm" />
                         Live
                       </div>
@@ -47,7 +57,7 @@ export default function Home({ liveStreams: initialLiveStreams, userEmail }: { l
                       <div className="stream-card-overlay" style={{ opacity: 1, background: 'linear-gradient(0deg, rgba(0,0,0,0.9) 0%, transparent 100%)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           <div>
-                            <div className="stream-card-title neon-text">{stream.name}</div>
+                            <div className={`stream-card-title ${activeStream?.id === stream.id ? 'neon-text' : ''}`}>{stream.name}</div>
                             <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent)', marginBottom: '2px' }}>
                               DJ {stream.profiles?.username || 'Guest'}
                             </div>
@@ -55,17 +65,25 @@ export default function Home({ liveStreams: initialLiveStreams, userEmail }: { l
                               {stream.listeners_count || 0} listening
                             </div>
                           </div>
-                          <div style={{ 
-                            width: '32px', 
-                            height: '32px', 
-                            borderRadius: '50%', 
-                            background: 'var(--accent)', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center',
-                            boxShadow: '0 0 15px var(--accent)'
-                          }}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="white" style={{ marginLeft: '2px' }}><path d="M8 5v14l11-7z"/></svg>
+                          <div 
+                            onClick={(e) => handlePlayClick(e, stream)}
+                            style={{ 
+                              width: '32px', 
+                              height: '32px', 
+                              borderRadius: '50%', 
+                              background: 'var(--accent)', 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center',
+                              boxShadow: activeStream?.id === stream.id ? '0 0 15px var(--accent)' : 'none',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {activeStream?.id === stream.id && isPlaying ? (
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                            ) : (
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="white" style={{ marginLeft: '2px' }}><path d="M8 5v14l11-7z"/></svg>
+                            )}
                           </div>
                         </div>
                       </div>

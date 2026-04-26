@@ -2,7 +2,7 @@
 
 **Live DJ streaming platform** built with Next.js 16, Supabase, and Icecast — styled after [DI.FM](https://di.fm).
 
-DJs register, create stream mounts, and broadcast live audio through Icecast. Listeners browse live streams in a rich, art-heavy interface with horizontal-scrolling card rows, a fixed sidebar, and a sticky top bar. Recordings are automatically captured and managed through the dashboard.
+DJs register, create stream mounts, and broadcast live audio through Icecast. Listeners browse live streams grouped by electronic music genres in a rich, art-heavy interface with horizontal-scrolling card rows, a fixed sidebar, a sticky top bar, and a global persistent audio player featuring a 7-mode audio visualizer. Recordings are automatically captured and managed through the dashboard.
 
 ---
 
@@ -14,7 +14,10 @@ The UI is inspired by **DI.FM** (Digitally Imported) — a premium electronic mu
 - **Fixed left sidebar** — navigation for Home, Dashboard, Profile
 - **Sticky top bar** — auth state aware (Login/Sign Up or user email)
 - **Horizontal-scrolling card rows** — featured hero cards (wide) and channel tiles (square)
-- **Art-heavy stream cards** — full-bleed artwork with gradient overlays, live badges, hover scale
+- **Art-heavy stream cards** — full-bleed artwork with gradient overlays, live badges, hover scale, and quick 'Direct MP3' copy links
+- **Persistent Global Player** — audio continues playing while navigating the site
+- **Audio Visualizer** — Milkdrop-inspired canvas visualizer with 7 trippy modes (Vortex, Kaleidoscope, Tunnel, Pulse, Wave, Nebula, Prism)
+- **Genre Categorization** — Live streams are dynamically grouped into sections based on the DJ's configured genre
 - **Branded auth pages** — centered cards with gradient logo, styled inputs, uppercase labels
 - **Responsive** — sidebar collapses on mobile
 
@@ -139,7 +142,10 @@ streamz/
 ├── components/
 │   ├── Sidebar.tsx             # Fixed left navigation sidebar
 │   ├── Topbar.tsx              # Sticky top bar (auth-aware)
-│   └── RecordingsManager.tsx   # Client component for recordings
+│   ├── RecordingsManager.tsx   # Client component for recordings
+│   ├── GlobalPlayer.tsx        # Persistent audio player fixed to the bottom
+│   ├── HomeClient.tsx          # Homepage client view with genre grouping
+│   └── Visualizer.tsx          # 7-mode HTML5 Canvas audio visualizer
 ├── lib/
 │   └── supabase/
 │       ├── client.ts           # Browser Supabase client

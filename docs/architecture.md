@@ -36,7 +36,7 @@ Streamz is a three-tier application for live DJ audio streaming:
 │  • Auth (email/pw)   │         │                  │
 │  • Postgres DB       │         │  MP3 files auto- │
 │  • Row Level Security│         │  saved by Icecast│
-│                      │         │                  │
+│  • Genre Categories  │         │                  │
 └──────────────────────┘         └──────────────────┘
 ```
 
@@ -98,6 +98,9 @@ Audio player → HTTP GET → Icecast :8000/live/[mount]
 | `Sidebar` | Server | Fixed left nav with Home/Dashboard/Profile links, active state highlighting |
 | `Topbar` | Server | Sticky top bar, auth-aware (shows Login/Sign Up or user email) |
 | `RecordingsManager` | Client | Fetch + display + delete recordings via API |
+| `HomeClient` | Client | Renders live streams grouped dynamically by genre category |
+| `GlobalPlayer` | Client | App-wide audio element state manager using React Context |
+| `Visualizer` | Client | HTML5 Canvas drawing 7 audio-reactive modes (Vortex, Tunnel, etc.) |
 
 ### CSS Design System (`globals.css`)
 

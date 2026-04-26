@@ -20,11 +20,7 @@ export default function Register() {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: {
-          username,
-        },
-      },
+      options: { data: { username } },
     })
     setLoading(false)
     if (error) {
@@ -35,69 +31,33 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-8">
-      <div className="w-full max-w-md bg-card rounded-lg shadow-xl p-8">
-        <h1 className="text-3xl font-bold text-foreground mb-8 text-center">Sign Up</h1>
-        {error && (
-          <div className="mb-4 p-3 rounded-md bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
-            {error}
-          </div>
-        )}
-        <form onSubmit={handleSignUp} className="space-y-4">
+    <div className="auth-page">
+      <div className="auth-card">
+        <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+          <span style={{ fontSize: '1.5rem', fontWeight: 800, background: 'linear-gradient(135deg, #3b7bf5, #6366f1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>STREAMZ</span>
+        </div>
+        <h1 className="auth-title">Create Account</h1>
+        {error && <div className="form-error">{error}</div>}
+        <form onSubmit={handleSignUp} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-foreground mb-2">
-              Username
-            </label>
-            <input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
+            <label htmlFor="username" className="form-label">DJ Name</label>
+            <input id="username" type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="form-input" placeholder="DJ Awesome" required />
           </div>
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="you@example.com"
-              required
-            />
+            <label htmlFor="email" className="form-label">Email</label>
+            <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="form-input" placeholder="you@example.com" required />
           </div>
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="••••••••"
-              required
-            />
+            <label htmlFor="password" className="form-label">Password</label>
+            <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="form-input" placeholder="••••••••" required />
           </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-medium py-2 px-4 rounded-md transition-colors"
-          >
-            {loading ? 'Creating account…' : 'Sign Up'}
+          <button type="submit" disabled={loading} className="form-btn form-btn-green">
+            {loading ? 'Creating account…' : 'Start Streaming'}
           </button>
         </form>
-        <p className="mt-6 text-center text-sm text-muted-foreground">
+        <p style={{ marginTop: '24px', textAlign: 'center', fontSize: '0.8125rem', color: 'var(--muted)' }}>
           Already have an account?{' '}
-          <a href="/login" className="text-blue-600 hover:underline font-medium">
-            Log in
-          </a>
+          <a href="/login" className="form-link">Log in</a>
         </p>
       </div>
     </div>

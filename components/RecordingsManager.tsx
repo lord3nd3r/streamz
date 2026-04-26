@@ -31,36 +31,47 @@ export default function RecordingsManager() {
       const res = await fetch(`/api/recordings/${encodeURIComponent(name)}`, { method: 'DELETE' })
       if (res.ok) {
         setRecordings(prev => prev.filter(r => r.name !== name))
-      } else {
-        const data = await res.json()
-        alert(data.error || 'Failed to delete')
       }
     } catch {
       alert('Network error while deleting')
     }
   }
 
-  if (loading) return <div className="text-muted-foreground">Loading recordings...</div>
-  if (error) return <div className="text-red-500 text-sm">{error}</div>
+  if (loading) return <p style={{ color: 'var(--muted)', fontSize: '0.875rem' }}>Loading recordings...</p>
+  if (error) return <p style={{ color: '#f87171', fontSize: '0.875rem' }}>{error}</p>
 
   return (
     <div>
-      <h3 className="text-lg font-semibold mb-4 text-foreground">Recordings ({recordings.length})</h3>
+      <p style={{ color: 'var(--muted)', fontSize: '0.8125rem', marginBottom: '12px' }}>
+        {recordings.length} recording{recordings.length !== 1 ? 's' : ''}
+      </p>
       {recordings.length === 0 ? (
-        <p className="text-muted-foreground">No recordings yet. Stream to create some!</p>
+        <p style={{ color: 'var(--muted)', fontSize: '0.875rem' }}>No recordings yet. Stream to create some!</p>
       ) : (
-        <div className="space-y-3 max-h-96 overflow-y-auto">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '380px', overflowY: 'auto' }}>
           {recordings.map((r) => (
-            <div key={r.name} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg hover:bg-muted">
-              <div className="flex-1">
-                <p className="font-medium truncate">{r.name}</p>
-                <p className="text-xs text-muted-foreground">{r.size} • {r.modified}</p>
+            <div key={r.name} className="recording-row">
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, color: '#fff', fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</div>
+                <div style={{ fontSize: '0.6875rem', color: 'var(--muted)' }}>{r.size} • {r.modified}</div>
               </div>
-              <div className="flex gap-2">
-                <a href={r.url} className="text-blue-500 hover:underline text-sm">Download</a>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+                <a href={r.url} style={{ color: 'var(--accent)', fontSize: '0.8125rem', textDecoration: 'none', fontWeight: 600 }}>Download</a>
                 <button
                   onClick={() => deleteRecording(r.name)}
-                  className="text-red-500 hover:text-red-700 text-sm font-medium px-3 py-1 rounded hover:bg-red-500/10 transition-colors"
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid rgba(239,68,68,0.3)',
+                    color: '#f87171',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    padding: '4px 12px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)' }}
+                  onMouseOut={(e) => { e.currentTarget.style.background = 'transparent' }}
                 >
                   Delete
                 </button>

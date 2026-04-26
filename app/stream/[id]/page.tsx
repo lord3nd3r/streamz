@@ -88,7 +88,7 @@ export default function StreamPage() {
 
           <div style={{ 
             display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
             gap: '40px', 
             width: '100%', 
             maxWidth: '1200px', 

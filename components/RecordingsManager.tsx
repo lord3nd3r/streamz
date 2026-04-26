@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createBrowserClient } from '@supabase/ssr'
 
 interface Recording {
   name: string
@@ -13,6 +14,11 @@ export default function RecordingsManager() {
   const [recordings, setRecordings] = useState<Recording[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
   useEffect(() => {
     fetch('/api/recordings')
@@ -37,6 +43,23 @@ export default function RecordingsManager() {
     }
   }
 
+  const publishRecording = async (name: string) => {
+    const title = prompt('Enter a title for this Mix:')
+    if (!title) return
+    
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return alert('You must be logged in to publish a mix.')
+
+    const { error } = await supabase.from('published_mixes').insert({
+      dj_id: user.id,
+      title: title,
+      filename: name
+    })
+
+    if (error) alert('Error publishing: ' + error.message)
+    else alert('Mix published successfully! It will now appear in the Archive.')
+  }
+
   if (loading) return <p style={{ color: 'var(--muted)', fontSize: '0.875rem' }}>Loading recordings...</p>
   if (error) return <p style={{ color: '#f87171', fontSize: '0.875rem' }}>{error}</p>
 
@@ -56,6 +79,22 @@ export default function RecordingsManager() {
                 <div style={{ fontSize: '0.6875rem', color: 'var(--muted)' }}>{r.size} • {r.modified}</div>
               </div>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+                <button
+                  onClick={() => publishRecording(r.name)}
+                  style={{
+                    background: 'var(--accent)',
+                    border: 'none',
+                    color: '#fff',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    padding: '4px 12px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  Publish
+                </button>
                 <a href={r.url} style={{ color: 'var(--accent)', fontSize: '0.8125rem', textDecoration: 'none', fontWeight: 600 }}>Download</a>
                 <button
                   onClick={() => deleteRecording(r.name)}

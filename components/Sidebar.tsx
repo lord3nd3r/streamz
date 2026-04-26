@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 interface SidebarProps {
-  active?: 'home' | 'dashboard' | 'profile'
+  active?: 'home' | 'dashboard' | 'profile' | 'mixes'
 }
 
 export default function Sidebar({ active = 'home' }: SidebarProps) {
@@ -18,6 +18,15 @@ export default function Sidebar({ active = 'home' }: SidebarProps) {
             <polyline points="9 22 9 12 15 12 15 22" />
           </svg>
           Home
+        </Link>
+        <Link
+          href="/mixes"
+          className={`sidebar-link ${active === 'mixes' ? 'sidebar-link-active' : ''}`}
+        >
+          <svg className="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
+          </svg>
+          Mix Archive
         </Link>
         <Link
           href="/dashboard"

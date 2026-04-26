@@ -34,6 +34,22 @@ export default async function Dashboard() {
     }
   }
 
+  async function deleteStream(formData: FormData) {
+    'use server'
+    try {
+      const supabase = await createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const streamId = formData.get('stream_id') as string
+      const { error } = await supabase.from('live_streams').delete().eq('id', streamId).eq('dj_id', user.id)
+      if (error) throw error
+      revalidatePath('/')
+      revalidatePath('/dashboard')
+    } catch (err) {
+      console.error('Error deleting stream:', err)
+    }
+  }
+
   async function updateGenre(formData: FormData) {
     'use server'
     try {
@@ -133,6 +149,24 @@ export default async function Dashboard() {
                       <input type="hidden" name="is_live" value={stream.is_live.toString()} />
                       <button type="submit" className={`btn-go-live ${stream.is_live ? 'btn-go-live-on' : 'btn-go-live-off'}`}>
                         {stream.is_live ? 'Go Offline' : 'Go Live'}
+                      </button>
+                    </form>
+                    <form action={deleteStream}>
+                      <input type="hidden" name="stream_id" value={stream.id} />
+                      <button 
+                        type="submit" 
+                        title="Delete Stream"
+                        style={{ 
+                          background: 'rgba(255,50,50,0.1)', 
+                          color: '#ff4444', 
+                          border: '1px solid rgba(255,50,50,0.3)', 
+                          borderRadius: '8px',
+                          padding: '6px 12px', 
+                          fontSize: '0.8rem',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        🗑️
                       </button>
                     </form>
                   </div>

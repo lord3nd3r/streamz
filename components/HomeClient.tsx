@@ -119,7 +119,7 @@ export default function Home({ liveStreams: initialLiveStreams, userEmail }: { l
                             />
                           </div>
                           <a 
-                            href={`https://boston.3nd3r.net/live${stream.mount}`} 
+                            href={`${stream.mount}`} 
                             target="_blank" 
                             rel="noreferrer"
                             style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', textDecoration: 'none' }}

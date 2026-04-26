@@ -1,12 +1,26 @@
 'use client'
 
-import React, { useRef, useEffect } from 'react'
+import React, { useRef, useEffect, useState } from 'react'
 import { useAudio } from '@/context/AudioContext'
+
+type VisMode = 'pulse' | 'wave' | 'nebula' | 'prism'
 
 export default function Visualizer() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const { analyser, isPlaying } = useAudio()
   const requestRef = useRef<number | undefined>(undefined)
+  const [mode, setMode] = useState<VisMode>('pulse')
+  const modeTimerRef = useRef<NodeJS.Timeout | undefined>(undefined)
+  const hueRef = useRef(0)
+
+  // Cycle modes every 15 seconds
+  useEffect(() => {
+    modeTimerRef.current = setInterval(() => {
+      const modes: VisMode[] = ['pulse', 'wave', 'nebula', 'prism']
+      setMode(prev => modes[(modes.indexOf(prev) + 1) % modes.length])
+    }, 15000)
+    return () => clearInterval(modeTimerRef.current)
+  }, [])
 
   const animate = () => {
     if (!canvasRef.current || !analyser) return
@@ -19,53 +33,93 @@ export default function Visualizer() {
     const dataArray = new Uint8Array(bufferLength)
     analyser.getByteFrequencyData(dataArray)
 
-    // Clear with slight trail
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.15)'
+    // Bass Detection (first 10 bins)
+    let bassSum = 0
+    for (let i = 0; i < 10; i++) bassSum += dataArray[i]
+    const bassAvg = bassSum / 10
+    const intensity = bassAvg / 255
+
+    // Hue shifting
+    hueRef.current = (hueRef.current + 0.5) % 360
+    const accentColor = `hsl(${hueRef.current}, 100%, 50%)`
+
+    // Clear with intensity-based trail
+    ctx.fillStyle = `rgba(0, 0, 0, ${0.1 + (intensity * 0.1)})`
     ctx.fillRect(0, 0, canvas.width, canvas.height)
 
     const centerX = canvas.width / 2
     const centerY = canvas.height / 2
-    const radius = Math.min(centerX, centerY) * 0.4
-    
-    // Get accent color from CSS
-    const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#00f2ff'
 
-    // Draw circular bars
-    ctx.lineWidth = 3
-    ctx.lineCap = 'round'
-
-    for (let i = 0; i < bufferLength; i++) {
-      const barHeight = (dataArray[i] / 255) * radius * 1.5
-      const angle = (i * 2 * Math.PI) / bufferLength
-      
-      const xStart = centerX + Math.cos(angle) * radius
-      const yStart = centerY + Math.sin(angle) * radius
-      const xEnd = centerX + Math.cos(angle) * (radius + barHeight)
-      const yEnd = centerY + Math.sin(angle) * (radius + barHeight)
-
-      ctx.strokeStyle = accentColor
-      ctx.beginPath()
-      ctx.moveTo(xStart, yStart)
-      ctx.lineTo(xEnd, yEnd)
-      ctx.stroke()
-      
-      // Mirror effect
-      const xEnd2 = centerX + Math.cos(angle) * (radius - barHeight * 0.5)
-      const yEnd2 = centerY + Math.sin(angle) * (radius - barHeight * 0.5)
-      
-      ctx.strokeStyle = `rgba(${parseInt(accentColor.slice(1,3), 16)}, ${parseInt(accentColor.slice(3,5), 16)}, ${parseInt(accentColor.slice(5,7), 16)}, 0.3)`
-      ctx.beginPath()
-      ctx.moveTo(xStart, yStart)
-      ctx.lineTo(xEnd2, yEnd2)
-      ctx.stroke()
+    // Apply "Shake" on heavy bass
+    if (intensity > 0.8) {
+      ctx.translate((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 10)
     }
 
-    // Outer glow ring
-    ctx.beginPath()
-    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI)
-    ctx.strokeStyle = accentColor
-    ctx.lineWidth = 1
-    ctx.stroke()
+    if (mode === 'pulse') {
+      const radius = Math.min(centerX, centerY) * 0.4
+      ctx.lineWidth = 3
+      for (let i = 0; i < bufferLength; i++) {
+        const barHeight = (dataArray[i] / 255) * radius * 1.5
+        const angle = (i * 2 * Math.PI) / bufferLength
+        const xStart = centerX + Math.cos(angle) * radius
+        const yStart = centerY + Math.sin(angle) * radius
+        const xEnd = centerX + Math.cos(angle) * (radius + barHeight)
+        const yEnd = centerY + Math.sin(angle) * (radius + barHeight)
+        ctx.strokeStyle = accentColor
+        ctx.beginPath()
+        ctx.moveTo(xStart, yStart)
+        ctx.lineTo(xEnd, yEnd)
+        ctx.stroke()
+      }
+    } 
+    else if (mode === 'wave') {
+      ctx.beginPath()
+      ctx.lineWidth = 4
+      ctx.strokeStyle = accentColor
+      const sliceWidth = canvas.width / bufferLength
+      let x = 0
+      for (let i = 0; i < bufferLength; i++) {
+        const v = dataArray[i] / 128.0
+        const y = (v * canvas.height) / 2
+        if (i === 0) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
+        x += sliceWidth
+      }
+      ctx.stroke()
+    }
+    else if (mode === 'nebula') {
+      for (let i = 0; i < 50; i++) {
+        const index = Math.floor(Math.random() * bufferLength)
+        const val = dataArray[index] / 255
+        const radius = val * 50 * intensity
+        const x = Math.random() * canvas.width
+        const y = Math.random() * canvas.height
+        ctx.fillStyle = accentColor
+        ctx.beginPath()
+        ctx.arc(x, y, radius, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    }
+    else if (mode === 'prism') {
+      ctx.save()
+      ctx.translate(centerX, centerY)
+      for (let j = 0; j < 8; j++) {
+        ctx.rotate(Math.PI / 4)
+        ctx.beginPath()
+        ctx.lineWidth = 2
+        ctx.strokeStyle = accentColor
+        for (let i = 0; i < bufferLength / 4; i++) {
+          const x = i * 4
+          const y = (dataArray[i] / 255) * 150
+          ctx.lineTo(x, y)
+        }
+        ctx.stroke()
+      }
+      ctx.restore()
+    }
+
+    // Reset translate
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
 
     requestRef.current = requestAnimationFrame(animate)
   }
@@ -79,19 +133,34 @@ export default function Visualizer() {
     return () => {
       if (requestRef.current) cancelAnimationFrame(requestRef.current)
     }
-  }, [isPlaying, analyser])
+  }, [isPlaying, analyser, mode])
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={600}
-      height={600}
-      style={{ 
-        width: '100%', 
-        height: '100%', 
-        borderRadius: '20px',
-        background: 'transparent'
-      }}
-    />
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <canvas
+        ref={canvasRef}
+        width={800}
+        height={800}
+        style={{ 
+          width: '100%', 
+          height: '100%', 
+          borderRadius: '20px',
+          background: '#000'
+        }}
+      />
+      <div style={{
+        position: 'absolute',
+        top: '15px',
+        left: '15px',
+        color: '#fff',
+        fontSize: '9px',
+        fontWeight: 900,
+        letterSpacing: '0.2em',
+        opacity: 0.5,
+        textShadow: '0 0 10px #000'
+      }}>
+        MODE: {mode.toUpperCase()}
+      </div>
+    </div>
   )
 }

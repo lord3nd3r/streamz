@@ -163,12 +163,14 @@ export default function Home({ liveStreams: initialLiveStreams, userEmail }: { l
             <div className="section-title">Directory</div>
             <div className="card-row">
               {['Progressive', 'Deep House', 'Techno', 'Trance', 'Breakbeats', 'Drum & Bass', 'Dubstep', 'Hardstyle'].map((g, i) => (
-                <div key={g} className="stream-card" style={{ height: '120px' }}>
-                  <Image src={`/art/${(i % 4) + 1}.png`} alt={g} width={180} height={180} className="stream-card-img" />
-                  <div className="stream-card-overlay" style={{ background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div className="stream-card-title" style={{ fontSize: '1.2rem', textAlign: 'center' }}>{g}</div>
+                <Link key={g} href={`/genre/${encodeURIComponent(g)}`} style={{ textDecoration: 'none' }}>
+                  <div className="stream-card" style={{ height: '120px', transition: 'all 0.2s ease' }}>
+                    <Image src={`/art/${(i % 4) + 1}.png`} alt={g} width={180} height={180} className="stream-card-img" />
+                    <div className="stream-card-overlay" style={{ background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div className="stream-card-title" style={{ fontSize: '1.2rem', textAlign: 'center' }}>{g}</div>
+                    </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </section>

@@ -105,17 +105,27 @@ export default function Home({ liveStreams: initialLiveStreams, userEmail }: { l
                     
                     <div style={{ padding: '0 4px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       {activeStream === stream.id && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '10px', color: 'var(--muted)' }}>VOL</span>
-                          <input 
-                            type="range" 
-                            min="0" 
-                            max="1" 
-                            step="0.01" 
-                            value={volume} 
-                            onChange={(e) => setVolume(parseFloat(e.target.value))}
-                            style={{ width: '60px', height: '4px' }}
-                          />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '10px', color: 'var(--muted)' }}>VOL</span>
+                            <input 
+                              type="range" 
+                              min="0" 
+                              max="1" 
+                              step="0.01" 
+                              value={volume} 
+                              onChange={(e) => setVolume(parseFloat(e.target.value))}
+                              style={{ width: '60px', height: '4px' }}
+                            />
+                          </div>
+                          <a 
+                            href={`https://boston.3nd3r.net/live${stream.mount}`} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', textDecoration: 'none' }}
+                          >
+                            🔗 Stream URL
+                          </a>
                         </div>
                       )}
                     </div>

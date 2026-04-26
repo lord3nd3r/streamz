@@ -9,16 +9,22 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useAudio } from '@/context/AudioContext'
 
-export default function StreamPage({ userEmail }: { userEmail?: string }) {
+export default function StreamPage() {
   const params = useParams()
   const streamId = params.id as string
   const [stream, setStream] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [userEmail, setUserEmail] = useState<string | undefined>(undefined)
   const { activeStream, isPlaying, playStream, togglePlay } = useAudio()
   const supabase = createClient()
 
   useEffect(() => {
-    async function fetchStream() {
+    async function fetchData() {
+      // Fetch User Session for Topbar
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) setUserEmail(user.email)
+
+      // Fetch Stream Data
       const { data } = await supabase
         .from('live_streams')
         .select(`*, profiles ( username, avatar_url )`)
@@ -30,7 +36,7 @@ export default function StreamPage({ userEmail }: { userEmail?: string }) {
       }
       setLoading(false)
     }
-    fetchStream()
+    fetchData()
   }, [streamId, supabase])
 
   if (loading) return <div style={{ background: 'var(--background)', height: '100vh' }} />

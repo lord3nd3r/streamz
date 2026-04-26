@@ -135,8 +135,30 @@ export default function Visualizer() {
     }
   }, [isPlaying, analyser, mode])
 
+  const nextMode = () => {
+    const modes: VisMode[] = ['pulse', 'wave', 'nebula', 'prism']
+    setMode(prev => modes[(modes.indexOf(prev) + 1) % modes.length])
+    // Reset timer when manually changed
+    if (modeTimerRef.current) {
+      clearInterval(modeTimerRef.current)
+      modeTimerRef.current = setInterval(() => {
+        setMode(prev => modes[(modes.indexOf(prev) + 1) % modes.length])
+      }, 15000)
+    }
+  }
+
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+    <div 
+      onClick={nextMode}
+      style={{ 
+        position: 'relative', 
+        width: '100%', 
+        height: '100%', 
+        cursor: 'pointer',
+        overflow: 'hidden',
+        borderRadius: '20px'
+      }}
+    >
       <canvas
         ref={canvasRef}
         width={800}
@@ -144,7 +166,6 @@ export default function Visualizer() {
         style={{ 
           width: '100%', 
           height: '100%', 
-          borderRadius: '20px',
           background: '#000'
         }}
       />
@@ -157,9 +178,24 @@ export default function Visualizer() {
         fontWeight: 900,
         letterSpacing: '0.2em',
         opacity: 0.5,
-        textShadow: '0 0 10px #000'
+        textShadow: '0 0 10px #000',
+        pointerEvents: 'none'
       }}>
         MODE: {mode.toUpperCase()}
+      </div>
+      <div style={{
+        position: 'absolute',
+        bottom: '15px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        color: '#fff',
+        fontSize: '8px',
+        fontWeight: 700,
+        opacity: 0.3,
+        letterSpacing: '0.1em',
+        pointerEvents: 'none'
+      }}>
+        CLICK TO CYCLE
       </div>
     </div>
   )

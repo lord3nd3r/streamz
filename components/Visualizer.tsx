@@ -3,7 +3,8 @@
 import React, { useRef, useEffect, useState } from 'react'
 import { useAudio } from '@/context/AudioContext'
 
-type VisMode = 'pulse' | 'wave' | 'nebula' | 'prism'
+const ALL_MODES = ['pulse', 'wave', 'nebula', 'prism', 'vortex', 'kaleidoscope', 'tunnel'] as const
+type VisMode = typeof ALL_MODES[number]
 
 export default function Visualizer() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -16,8 +17,7 @@ export default function Visualizer() {
   // Cycle modes every 15 seconds
   useEffect(() => {
     modeTimerRef.current = setInterval(() => {
-      const modes: VisMode[] = ['pulse', 'wave', 'nebula', 'prism']
-      setMode(prev => modes[(modes.indexOf(prev) + 1) % modes.length])
+      setMode(prev => ALL_MODES[(ALL_MODES.indexOf(prev) + 1) % ALL_MODES.length])
     }, 15000)
     return () => clearInterval(modeTimerRef.current)
   }, [])
@@ -117,6 +117,72 @@ export default function Visualizer() {
       }
       ctx.restore()
     }
+    else if (mode === 'vortex') {
+      ctx.save()
+      ctx.translate(centerX, centerY)
+      ctx.rotate((Date.now() / 1000) * (intensity + 0.1)) // Rotate over time
+      ctx.beginPath()
+      ctx.lineWidth = 3
+      ctx.strokeStyle = accentColor
+      for (let i = 0; i < bufferLength; i++) {
+        const val = dataArray[i] / 255
+        const angle = i * 0.15
+        const r = angle * 8 * (val + 0.5)
+        const x = Math.cos(angle) * r
+        const y = Math.sin(angle) * r
+        if (i === 0) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
+      }
+      ctx.stroke()
+      ctx.restore()
+    }
+    else if (mode === 'kaleidoscope') {
+      ctx.save()
+      ctx.translate(centerX, centerY)
+      const segments = 16
+      const angleStep = (Math.PI * 2) / segments
+      for (let j = 0; j < segments; j++) {
+        ctx.save()
+        ctx.rotate(j * angleStep)
+        if (j % 2 === 1) ctx.scale(1, -1) // Mirror effect
+        ctx.beginPath()
+        ctx.lineWidth = 2
+        ctx.strokeStyle = accentColor
+        for (let i = 0; i < bufferLength / 4; i++) {
+          const x = i * 5
+          const y = (dataArray[i] / 255) * 200 * (intensity + 0.5)
+          if (i === 0) ctx.moveTo(x, y)
+          else ctx.lineTo(x, y)
+        }
+        ctx.stroke()
+        ctx.restore()
+      }
+      ctx.restore()
+    }
+    else if (mode === 'tunnel') {
+      ctx.save()
+      ctx.translate(centerX, centerY)
+      ctx.lineWidth = 2
+      // Draw 8 concentric shapes to form a tunnel
+      for (let i = 0; i < 8; i++) {
+        const z = ((Date.now() / 15) + (i * 100)) % 800
+        const scale = 800 / (z || 1)
+        ctx.beginPath()
+        ctx.strokeStyle = `hsla(${hueRef.current + (i * 20)}, 100%, 50%, ${1 - (z / 800)})`
+        const points = 16
+        for (let p = 0; p <= points; p++) {
+          const angle = (p / points) * Math.PI * 2
+          const displacement = (dataArray[(p * 4) % bufferLength] / 255) * 40
+          const r = 100 + displacement
+          const x = Math.cos(angle) * r * scale
+          const y = Math.sin(angle) * r * scale
+          if (p === 0) ctx.moveTo(x, y)
+          else ctx.lineTo(x, y)
+        }
+        ctx.stroke()
+      }
+      ctx.restore()
+    }
 
     // Reset translate
     ctx.setTransform(1, 0, 0, 1, 0, 0)
@@ -136,13 +202,12 @@ export default function Visualizer() {
   }, [isPlaying, analyser, mode])
 
   const nextMode = () => {
-    const modes: VisMode[] = ['pulse', 'wave', 'nebula', 'prism']
-    setMode(prev => modes[(modes.indexOf(prev) + 1) % modes.length])
+    setMode(prev => ALL_MODES[(ALL_MODES.indexOf(prev) + 1) % ALL_MODES.length])
     // Reset timer when manually changed
     if (modeTimerRef.current) {
       clearInterval(modeTimerRef.current)
       modeTimerRef.current = setInterval(() => {
-        setMode(prev => modes[(modes.indexOf(prev) + 1) % modes.length])
+        setMode(prev => ALL_MODES[(ALL_MODES.indexOf(prev) + 1) % ALL_MODES.length])
       }, 15000)
     }
   }

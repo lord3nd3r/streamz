@@ -18,7 +18,7 @@ export default function StreamPage() {
   const [loading, setLoading] = useState(true)
   const [userEmail, setUserEmail] = useState<string | undefined>(undefined)
   const [showVisualizer, setShowVisualizer] = useState(false)
-  const [showChat, setShowChat] = useState(true)
+  const [showChat, setShowChat] = useState(false)
   const [shareStatus, setShareStatus] = useState<'idle' | 'shortening' | 'copied'>('idle')
   const { activeStream, isPlaying, playStream, togglePlay } = useAudio()
   const supabase = createClient()

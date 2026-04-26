@@ -228,7 +228,8 @@ export default function StreamPage() {
                   <span>👥 {stream.listeners_count || 0} Clubbers</span>
                   <button 
                     onClick={() => {
-                      const url = `https://streamz.lol/live/${stream.mount.replace(/^\//, '')}`;
+                      const mount = stream.mount.startsWith('/live/') ? stream.mount.substring(6) : stream.mount.replace(/^\//, '');
+                      const url = `https://streamz.lol/live/${mount}`;
                       navigator.clipboard.writeText(url);
                       alert('Copied Direct MP3 URL!');
                     }}

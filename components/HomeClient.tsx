@@ -89,7 +89,8 @@ export default function Home({ liveStreams: initialLiveStreams, userEmail }: { l
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  const url = `https://streamz.lol/live/${stream.mount.replace(/^\//, '')}`;
+                                  const mount = stream.mount.startsWith('/live/') ? stream.mount.substring(6) : stream.mount.replace(/^\//, '');
+                                  const url = `https://streamz.lol/live/${mount}`;
                                   navigator.clipboard.writeText(url);
                                   alert('Copied Direct MP3 URL!');
                                 }}

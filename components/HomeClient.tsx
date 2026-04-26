@@ -71,7 +71,7 @@ export default function Home({ liveStreams: initialLiveStreams, userEmail }: { l
                         style={{ transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}
                       >
                         <Image
-                          src={`/art/${(Math.abs(stream.name.charCodeAt(0) % 4) + 1)}.png`}
+                          src={stream.profiles?.avatar_url || `/art/${(Math.abs(stream.name.charCodeAt(0) % 4) + 1)}.png`}
                           alt={stream.name}
                           width={180}
                           height={180}

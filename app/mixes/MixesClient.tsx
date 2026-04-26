@@ -34,7 +34,7 @@ export default function MixesClient({ initialMixes }: { initialMixes: any[] }) {
               onClick={() => activeStream?.id === mix.id ? togglePlay() : playStream(pseudoStream)}
             >
               <Image 
-                src={`/art/${(Math.abs(mix.title.charCodeAt(0) % 4) + 1)}.png`}
+                src={mix.profiles?.avatar_url || `/art/${(Math.abs(mix.title.charCodeAt(0) % 4) + 1)}.png`}
                 alt="Mix Cover"
                 fill
                 style={{ borderRadius: '12px', objectFit: 'cover' }}

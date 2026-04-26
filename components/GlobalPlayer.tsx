@@ -15,7 +15,7 @@ export default function GlobalPlayer() {
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
         <div className={isPlaying ? 'beat-pulse' : ''} style={{ position: 'relative', width: '48px', height: '48px', flexShrink: 0 }}>
           <Image
-            src={`/art/${(Math.abs(activeStream.name.charCodeAt(0) % 4) + 1)}.png`}
+            src={activeStream.profiles?.avatar_url || `/art/${(Math.abs(activeStream.name.charCodeAt(0) % 4) + 1)}.png`}
             alt={activeStream.name}
             fill
             style={{ borderRadius: '8px', objectFit: 'cover' }}

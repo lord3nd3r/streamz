@@ -104,7 +104,7 @@ export default function StreamPage() {
                 ) : (
                   <div className={activeStream?.id === stream.id && isPlaying ? 'beat-pulse' : ''} style={{ width: '100%', height: '100%' }}>
                     <Image
-                      src={`/art/${(Math.abs(stream.name.charCodeAt(0) % 4) + 1)}.png`}
+                      src={stream.profiles?.avatar_url || `/art/${(Math.abs(stream.name.charCodeAt(0) % 4) + 1)}.png`}
                       alt={stream.name}
                       fill
                       className="neon-border"

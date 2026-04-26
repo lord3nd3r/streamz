@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 import RecordingsManager from '@/components/RecordingsManager'
+import AvatarUpload from '@/components/AvatarUpload'
 import type { Database } from '@/types/supabase'
 
 type LiveStream = Database['public']['Tables']['live_streams']['Row']
@@ -103,6 +104,11 @@ export default async function Dashboard() {
             Welcome back, {profile?.username || 'DJ'} 🎧
           </h1>
 
+          <div className="dash-section">
+            <div className="dash-section-title">DJ Profile</div>
+            <AvatarUpload userId={user.id} initialUrl={profile?.avatar_url || null} />
+          </div>
+
           {/* Create Stream */}
           <div className="dash-section">
             <div className="dash-section-title">Start New Stream</div>
@@ -193,7 +199,7 @@ export default async function Dashboard() {
               <span style={{ color: 'var(--muted)' }}>Mount</span>
               <span style={{ color: 'var(--foreground)' }}>/live/[your-mount]</span>
               <span style={{ color: 'var(--muted)' }}>Format</span>
-              <span style={{ color: 'var(--foreground)' }}>MP3 128kbps</span>
+              <span style={{ color: 'var(--foreground)' }}>MP3 / AAC (Any Bitrate)</span>
             </div>
             <p style={{ marginTop: '12px', fontSize: '0.6875rem', color: 'var(--muted)' }}>
               Use OBS, BUTT, or IceS source client. Contact admin for source password.

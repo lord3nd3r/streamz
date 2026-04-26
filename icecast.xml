@@ -1,0 +1,51 @@
+&lt;icecast&gt;
+  &lt;location&gt;Streamz Server&lt;/location&gt;
+  &lt;admin&gt;
+    &lt;icename&gt;Streamz DJ Platform&lt;/icename&gt;
+  &lt;/admin&gt;
+
+  &lt;limits&gt;
+    &lt;clients&gt;10000&lt;/clients&gt;
+    &lt;sources&gt;20&lt;/sources&gt;
+    &lt;queue-size&gt;524288&lt;/queue-size&gt;
+    &lt;client-timeout&gt;30&lt;/client-timeout&gt;
+    &lt;header-timeout&gt;15&lt;/header-timeout&gt;
+    &lt;source-timeout&gt;10&lt;/source-timeout&gt;
+    &lt;burst-size&gt;65536&lt;/burst-size&gt;
+  &lt;/limits&gt;
+
+  &lt;authentication&gt;
+    &lt;source-password&gt;hackme&lt;/source-password&gt;
+    &lt;admin-user&gt;admin&lt;/admin-user&gt;
+    &lt;admin-password&gt;hackme&lt;/admin-password&gt;
+  &lt;/authentication&gt;
+
+  &lt;shoutcast-mount&gt;/shoutcast.mp3&lt;/shoutcast-mount&gt;
+
+  &lt;fileserve&gt;1&lt;/fileserve&gt;
+
+  &lt;paths&gt;
+    &lt;logdir&gt;/var/log/icecast&lt;/logdir&gt;
+    &lt;webroot&gt;/usr/share/icecast/doc/icecast_web&lt;/webroot&gt;
+    &lt;adminroot&gt;/usr/share/icecast/doc/icecast_admin&lt;/adminroot&gt;
+    &lt;alias source=&quot;/&quot; dest=&quot;/status.xsl&quot;/&gt;
+  &lt;/paths&gt;
+
+  &lt;logging&gt;
+    &lt;accesslog>access.log&lt;/accesslog&gt;
+    &lt;errorlog>error.log&lt;/errorlog&gt;
+    &lt;loglevel>3&lt;/loglevel&gt;
+    &lt;logsize&gt;10000&lt;/logsize&gt;
+  &lt;/logging&gt;
+
+  &lt;security&gt;
+    &lt;chroot&gt;0&lt;/chroot&gt;
+  &lt;/security&gt;
+
+  &lt;mount name=&quot;/live/*&quot;&gt;
+    &lt;dump-file&gt;/tmp/dumpfiles/%Y-%m-%d_%H-%M-%S.mp3&lt;/dump-file&gt;
+    &lt;public&gt;0&lt;/public&gt;
+    &lt;fallback-mount&gt;/silence.mp3&lt;/fallback-mount&gt;
+    &lt;fallback-override&gt;1&lt;/fallback-override&gt;
+  &lt;/mount&gt;
+&lt;/icecast&gt;

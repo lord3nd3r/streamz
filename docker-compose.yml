@@ -1,0 +1,40 @@
+services:
+  nextjs:
+    build: .
+    ports:
+      - '3000:3000'
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    stdin_open: true
+    tty: true
+
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_DB: streamz
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  icecast:
+    image: mikenye/icecast
+    restart: unless-stopped
+    ports:
+      - '8000:8000'
+    environment:
+      IC_SOURCE_PASSWORD: ${ICECAST_SOURCE_PASSWORD:-changeme}
+      IC_ADMIN_PASSWORD: ${ICECAST_ADMIN_PASSWORD:-changeme}
+      IC_ADMIN_USERNAME: ${ICECAST_ADMIN_USERNAME:-admin}
+    volumes:
+      - ./icecast.xml:/etc/icecast.xml
+      - ./recordings:/tmp/dumpfiles
+
+volumes:
+  postgres_data:

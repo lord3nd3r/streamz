@@ -8,6 +8,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useAudio } from '@/context/AudioContext'
+import Visualizer from '@/components/Visualizer'
 
 export default function StreamPage() {
   const params = useParams()
@@ -15,16 +16,15 @@ export default function StreamPage() {
   const [stream, setStream] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [userEmail, setUserEmail] = useState<string | undefined>(undefined)
+  const [showVisualizer, setShowVisualizer] = useState(false)
   const { activeStream, isPlaying, playStream, togglePlay } = useAudio()
   const supabase = createClient()
 
   useEffect(() => {
     async function fetchData() {
-      // Fetch User Session for Topbar
       const { data: { user } } = await supabase.auth.getUser()
       if (user) setUserEmail(user.email)
 
-      // Fetch Stream Data
       const { data } = await supabase
         .from('live_streams')
         .select(`*, profiles ( username, avatar_url )`)
@@ -63,17 +63,47 @@ export default function StreamPage() {
           <div style={{ position: 'absolute', top: '-100px', left: '-100px', width: '400px', height: '400px', background: 'var(--accent)', opacity: 0.1, filter: 'blur(100px)', borderRadius: '50%' }} />
           <div style={{ position: 'absolute', bottom: '-100px', right: '-100px', width: '400px', height: '400px', background: 'var(--accent)', opacity: 0.1, filter: 'blur(100px)', borderRadius: '50%' }} />
 
-          {/* ── Visualizer Content ── */}
-          <div style={{ textAlign: 'center', zIndex: 1, maxWidth: '600px', width: '100%' }}>
-            <div className={activeStream?.id === stream.id && isPlaying ? 'beat-pulse' : ''} style={{ marginBottom: '40px', position: 'relative', display: 'inline-block' }}>
-              <Image
-                src={`/art/${(Math.abs(stream.name.charCodeAt(0) % 4) + 1)}.png`}
-                alt={stream.name}
-                width={400}
-                height={400}
+          {/* ── Visualizer / Artwork Content ── */}
+          <div style={{ textAlign: 'center', zIndex: 1, maxWidth: '800px', width: '100%' }}>
+            <div style={{ marginBottom: '40px', position: 'relative', display: 'inline-block', width: '400px', height: '400px' }}>
+              {showVisualizer ? (
+                <div className="neon-border" style={{ width: '100%', height: '100%', borderRadius: '20px', background: 'rgba(0,0,0,0.8)' }}>
+                  <Visualizer />
+                </div>
+              ) : (
+                <div className={activeStream?.id === stream.id && isPlaying ? 'beat-pulse' : ''}>
+                  <Image
+                    src={`/art/${(Math.abs(stream.name.charCodeAt(0) % 4) + 1)}.png`}
+                    alt={stream.name}
+                    width={400}
+                    height={400}
+                    className="neon-border"
+                    style={{ borderRadius: '20px', objectFit: 'cover' }}
+                  />
+                </div>
+              )}
+              
+              <button 
+                onClick={() => setShowVisualizer(!showVisualizer)}
                 className="neon-border"
-                style={{ borderRadius: '20px', objectFit: 'cover' }}
-              />
+                style={{
+                  position: 'absolute',
+                  bottom: '-20px',
+                  right: '-20px',
+                  background: 'var(--surface)',
+                  color: 'var(--accent)',
+                  padding: '8px 16px',
+                  borderRadius: '20px',
+                  fontSize: '10px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  zIndex: 2,
+                  boxShadow: '0 4px 15px rgba(0,0,0,0.5)'
+                }}
+              >
+                {showVisualizer ? '🖼️ SHOW ART' : '🌈 SHOW VISUALS'}
+              </button>
+
               {stream.is_live && (
                 <div style={{ 
                   position: 'absolute', 

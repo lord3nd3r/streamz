@@ -6,6 +6,7 @@ interface AudioContextType {
   activeStream: any | null
   isPlaying: boolean
   volume: number
+  analyser: AnalyserNode | null
   playStream: (stream: any) => void
   togglePlay: () => void
   updateVolume: (val: number) => void
@@ -18,6 +19,9 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [volume, setVolume] = useState(0.8)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [analyser, setAnalyser] = useState<AnalyserNode | null>(null)
+  const audioContextRef = useRef<AudioContext | null>(null)
+  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null)
 
   // Initialize audio object on client
   useEffect(() => {
@@ -48,8 +52,30 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     }
   }, [volume])
 
+  const setupAudioContext = () => {
+    if (!audioContextRef.current && audioRef.current) {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
+      const ctx = new AudioCtx()
+      const ans = ctx.createAnalyser()
+      ans.fftSize = 256
+      
+      const source = ctx.createMediaElementSource(audioRef.current)
+      source.connect(ans)
+      ans.connect(ctx.destination)
+      
+      audioContextRef.current = ctx
+      sourceRef.current = source
+      setAnalyser(ans)
+    }
+    
+    if (audioContextRef.current?.state === 'suspended') {
+      audioContextRef.current.resume()
+    }
+  }
+
   const playStream = (stream: any) => {
     if (!audioRef.current) return
+    setupAudioContext()
 
     // If it's the same stream and already playing, do nothing
     if (activeStream?.id === stream.id && isPlaying) return
@@ -67,6 +93,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
 
   const togglePlay = () => {
     if (!audioRef.current || !activeStream) return
+    setupAudioContext()
 
     if (isPlaying) {
       audioRef.current.pause()
@@ -85,7 +112,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AudioContext.Provider value={{ activeStream, isPlaying, volume, playStream, togglePlay, updateVolume }}>
+    <AudioContext.Provider value={{ activeStream, isPlaying, volume, analyser, playStream, togglePlay, updateVolume }}>
       {children}
     </AudioContext.Provider>
   )

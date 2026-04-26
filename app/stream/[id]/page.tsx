@@ -5,14 +5,18 @@ import Topbar from '@/components/Topbar'
 import Image from 'next/image'
 import Link from 'next/link'
 
-export default async function StreamPage({ params }: { params: { id: string } }) {
+export default async function StreamPage({ params }: { params: Promise<{ id: string }> }) {
+  // In Next.js 15+, params is a promise and must be awaited
+  const resolvedParams = await params
+  const streamId = resolvedParams.id
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   
   const { data: stream } = await supabase
     .from('live_streams')
     .select(`*, profiles ( username, avatar_url )`)
-    .eq('id', params.id)
+    .eq('id', streamId)
     .single()
 
   if (!stream) notFound()
@@ -35,8 +39,8 @@ export default async function StreamPage({ params }: { params: { id: string } })
           overflow: 'hidden'
         }}>
           {/* ── Background Glows ── */}
-          <div style={{ position: 'absolute', top: '-100px', left: '-100px', width: '400px', height: '400px', background: 'var(--accent)', opacity: 0.05, filter: 'blur(100px)', borderRadius: '50%' }} />
-          <div style={{ position: 'absolute', bottom: '-100px', right: '-100px', width: '400px', height: '400px', background: 'var(--accent)', opacity: 0.05, filter: 'blur(100px)', borderRadius: '50%' }} />
+          <div style={{ position: 'absolute', top: '-100px', left: '-100px', width: '400px', height: '400px', background: 'var(--accent)', opacity: 0.1, filter: 'blur(100px)', borderRadius: '50%' }} />
+          <div style={{ position: 'absolute', bottom: '-100px', right: '-100px', width: '400px', height: '400px', background: 'var(--accent)', opacity: 0.1, filter: 'blur(100px)', borderRadius: '50%' }} />
 
           {/* ── Visualizer Content ── */}
           <div style={{ textAlign: 'center', zIndex: 1, maxWidth: '600px', width: '100%' }}>
@@ -89,7 +93,7 @@ export default async function StreamPage({ params }: { params: { id: string } })
                 autoPlay 
                 controls 
                 style={{ width: '100%', height: '40px' }}
-                src={`https://boston.3nd3r.net/live${stream.mount}?t=${Date.now()}`}
+                src={`${stream.mount}?t=${Date.now()}`}
               />
               <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--muted)', fontSize: '0.875rem' }}>
                 <span>👥 {stream.listeners_count || 0} Clubbers</span>

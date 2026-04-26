@@ -27,6 +27,26 @@ export default function Home({ liveStreams: initialLiveStreams, userEmail }: { l
 
         <div style={{ padding: '28px 32px', display: 'flex', flexDirection: 'column', gap: '40px' }}>
           
+          {/* ── Hero / Instructions ── */}
+          <section style={{ 
+            background: 'rgba(59, 123, 245, 0.05)', 
+            border: '1px solid var(--border-color)', 
+            borderRadius: '16px', 
+            padding: '32px',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '200px', height: '200px', background: 'var(--accent)', opacity: 0.05, filter: 'blur(60px)', borderRadius: '50%' }} />
+            
+            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '12px', color: '#fff' }}>
+              Welcome to <span className="neon-text">STREAMZ</span>
+            </h1>
+            <p style={{ color: 'var(--muted)', fontSize: '0.9375rem', lineHeight: 1.6, maxWidth: '600px', marginBottom: '0' }}>
+              🎧 <strong style={{ color: '#fff' }}>Listen</strong>: No registration needed. Just pick a DJ below and enter the club.<br />
+              🎹 <strong style={{ color: '#fff' }}>DJ</strong>: Want to stream your own sets? <a href="/register" style={{ color: 'var(--accent)', fontWeight: 700, textDecoration: 'none' }}>Register here</a> to get your mount points and start playing.
+            </p>
+          </section>
+
           {/* ── Live Now ── */}
           <section>
             <div className="section-title">🔴 Live Now</div>

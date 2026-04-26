@@ -157,16 +157,17 @@ export default async function Dashboard() {
                         type="submit" 
                         title="Delete Stream"
                         style={{ 
-                          background: 'rgba(255,50,50,0.1)', 
+                          background: 'rgba(255, 50, 50, 0.1)', 
                           color: '#ff4444', 
-                          border: '1px solid rgba(255,50,50,0.3)', 
+                          border: '1px solid rgba(255, 50, 50, 0.3)', 
                           borderRadius: '8px',
                           padding: '6px 12px', 
                           fontSize: '0.8rem',
-                          cursor: 'pointer'
+                          cursor: 'pointer',
+                          fontWeight: 600
                         }}
                       >
-                        🗑️
+                        Delete
                       </button>
                     </form>
                   </div>

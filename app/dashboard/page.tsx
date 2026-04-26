@@ -121,10 +121,12 @@ export default async function Dashboard() {
                         defaultValue={(stream as any).genre || 'Other'} 
                         className="form-input" 
                         style={{ padding: '6px 12px', height: 'auto', fontSize: '0.8rem' }}
-                        onChange={(e) => e.target.form?.requestSubmit()}
                       >
                         {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
                       </select>
+                      <button type="submit" className="btn-go-live btn-go-live-off" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>
+                        Update
+                      </button>
                     </form>
                     <form action={toggleStream}>
                       <input type="hidden" name="stream_id" value={stream.id} />

@@ -48,8 +48,7 @@
         </changeowner>
     </security>
 
-    <mount name="/live/*">
-        <dump-file>/tmp/dumpfiles/%Y-%m-%d_%H-%M-%S.mp3</dump-file>
+    <mount type="default">
         <public>0</public>
     </mount>
 </icecast>

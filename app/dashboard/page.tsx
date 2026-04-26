@@ -68,6 +68,22 @@ export default async function Dashboard() {
     }
   }
 
+  async function toggleRecording(formData: FormData) {
+    'use server'
+    try {
+      const supabase = await createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const streamId = formData.get('stream_id') as string
+      const recordStream = formData.get('record_stream') === 'true'
+      const { error } = await supabase.from('live_streams').update({ record_stream: !recordStream }).eq('id', streamId).eq('dj_id', user.id)
+      if (error) throw error
+      revalidatePath('/dashboard')
+    } catch (err) {
+      console.error('Error toggling recording:', err)
+    }
+  }
+
   async function createStream(formData: FormData) {
     'use server'
     try {
@@ -148,6 +164,18 @@ export default async function Dashboard() {
                       </select>
                       <button type="submit" className="btn-go-live btn-go-live-off" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>
                         Update
+                      </button>
+                    </form>
+
+                    <form action={toggleRecording}>
+                      <input type="hidden" name="stream_id" value={stream.id} />
+                      <input type="hidden" name="record_stream" value={((stream as any).record_stream || false).toString()} />
+                      <button 
+                        type="submit" 
+                        className={`btn-go-live ${((stream as any).record_stream) ? 'btn-go-live-on' : 'btn-go-live-off'}`}
+                        style={{ padding: '6px 12px', fontSize: '0.8rem', minWidth: '100px' }}
+                      >
+                        {((stream as any).record_stream) ? '⏺ Recording On' : '⏺ Record Off'}
                       </button>
                     </form>
                     <form action={toggleStream}>

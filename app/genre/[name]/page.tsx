@@ -4,12 +4,15 @@ import Topbar from '@/components/Topbar'
 import Image from 'next/image'
 import Link from 'next/link'
 
-export default async function GenrePage({ params }: { params: { name: string } }) {
+export default async function GenrePage({ params }: { params: Promise<{ name: string }> }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   
+  // Await the params Promise in Next.js 16+
+  const { name } = await params
+  
   // Decode the URL param (e.g. deep%20house -> deep house)
-  const decodedName = decodeURIComponent(params.name)
+  const decodedName = decodeURIComponent(name)
   
   // Fetch all streams matching this genre (case-insensitive)
   const { data: streams } = await supabase

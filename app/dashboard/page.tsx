@@ -19,30 +19,40 @@ export default async function Dashboard() {
 
   async function toggleStream(formData: FormData) {
     'use server'
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const streamId = formData.get('stream_id') as string
-    const isLive = formData.get('is_live') === 'true'
-    await supabase.from('live_streams').update({ is_live: !isLive }).eq('id', streamId).eq('dj_id', user.id)
-    revalidatePath('/')
-    revalidatePath('/dashboard')
+    try {
+      const supabase = await createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const streamId = formData.get('stream_id') as string
+      const isLive = formData.get('is_live') === 'true'
+      const { error } = await supabase.from('live_streams').update({ is_live: !isLive }).eq('id', streamId).eq('dj_id', user.id)
+      if (error) throw error
+      revalidatePath('/')
+      revalidatePath('/dashboard')
+    } catch (err) {
+      console.error('Error toggling stream:', err)
+    }
   }
 
   async function createStream(formData: FormData) {
     'use server'
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const name = formData.get('name') as string
-    if (!name) return
-    const { data: p } = await supabase.from('profiles').select('username').eq('id', user.id).single()
-    const username = p?.username || 'dj'
-    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-    const mount = `/live/${username}-${slug}-${Date.now().toString().slice(-6)}`
-    await supabase.from('live_streams').insert({ dj_id: user.id, name, mount, is_live: true })
-    revalidatePath('/')
-    revalidatePath('/dashboard')
+    try {
+      const supabase = await createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const name = formData.get('name') as string
+      if (!name) return
+      const { data: p } = await supabase.from('profiles').select('username').eq('id', user.id).single()
+      const username = p?.username || 'dj'
+      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+      const mount = `/live/${username}-${slug}-${Date.now().toString().slice(-6)}`
+      const { error } = await supabase.from('live_streams').insert({ dj_id: user.id, name, mount, is_live: true })
+      if (error) throw error
+      revalidatePath('/')
+      revalidatePath('/dashboard')
+    } catch (err) {
+      console.error('Error creating stream:', err)
+    }
   }
 
   return (

@@ -6,16 +6,17 @@ services:
         NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-http://localhost:54321}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:-placeholder}
     ports:
-      - '3000:3000'
+      - '9000:3000'
+    # Removed host bind-mounts for production stability
     volumes:
-      - .:/app
       - /app/node_modules
-      - /app/.next
     environment:
       - NODE_ENV=development
       - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL:-http://localhost:54321}
       - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY:-placeholder}
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-}
+      - ICECAST_HOST=${ICECAST_HOST:-localhost}
+      - ICECAST_PORT=${ICECAST_PORT:-8000}
     stdin_open: true
     tty: true
 
@@ -32,19 +33,23 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   icecast:
-    image: infiniteproject/icecast
+    image: moul/icecast
     restart: unless-stopped
     ports:
       - '8000:8000'
-    environment:
-      ICECAST_SOURCE_PASSWORD: ${ICECAST_SOURCE_PASSWORD:-changeme}
-      ICECAST_ADMIN_PASSWORD: ${ICECAST_ADMIN_PASSWORD:-changeme}
-      ICECAST_ADMIN_USERNAME: ${ICECAST_ADMIN_USERNAME:-admin}
-      ICECAST_HOSTNAME: ${ICECAST_HOST:-localhost}
-      ICECAST_LOCATION: Streamz
     volumes:
-      - ./icecast.xml:/etc/icecast.xml
+      - ./icecast.xml:/etc/icecast2/icecast.xml
       - ./recordings:/tmp/dumpfiles
+
+  sync:
+    build:
+      context: .
+      dockerfile: scripts/Dockerfile.sync
+    restart: unless-stopped
+    environment:
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+    network_mode: host
 
 volumes:
   postgres_data:

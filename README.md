@@ -23,23 +23,25 @@ The UI is inspired by **DI.FM** (Digitally Imported) — a premium electronic mu
 ## Architecture
 
 ```
-┌─────────────┐     ┌──────────────┐     ┌─────────────────┐
-│   Browser    │────▶│  Next.js 16  │────▶│    Supabase      │
-│  (Listener)  │◀────│  (App Router)│◀────│  (Auth + DB)     │
-└─────────────┘     └──────┬───────┘     └─────────────────┘
-                           │
-┌─────────────┐     ┌──────┴───────┐     ┌─────────────────┐
-│  OBS / IceS │────▶│   Icecast    │────▶│   recordings/    │
-│  (DJ Source) │     │  (Port 8000) │     │   (MP3 dumps)    │
-└─────────────┘     └──────────────┘     └─────────────────┘
+┌─────────────┐     ┌──────────────┐     ┌──────────────┐     ┌─────────────────┐
+│   Browser    │────▶│    Nginx     │────▶│  Next.js 16  │────▶│    Supabase      │
+│  (Listener)  │◀────│ (HTTPS/Proxy)│◀────│  (App Router)│◀────│  (Auth + DB)     │
+└─────────────┘     └──────┬───────┘     └──────┬───────┘     └─────────────────┘
+                           │                    │
+┌─────────────┐     ┌──────┴───────┐     ┌──────┴───────┐     ┌─────────────────┐
+│  OBS / Mixxx│────▶│   Icecast    │◀────│ Sync Service │     │   recordings/    │
+│  (DJ Source) │     │  (Port 8000) │     │  (Loop Sync) │     │   (MP3 dumps)    │
+└─────────────┘     └──────────────┘     └──────────────┘     └─────────────────┘
 ```
 
 | Component | Purpose |
 |-----------|---------|
 | **Next.js 16** | Frontend + API routes + server actions (Turbopack) |
-| **Supabase** | Authentication (email/password), Postgres database |
-| **Icecast** | Audio streaming server, accepts source connections |
-| **Docker Compose** | Orchestrates all three services |
+| **Supabase** | Authentication, Postgres database, and RLS policies |
+| **Icecast** | Audio streaming server (Ogg/MP3) |
+| **Nginx** | SSL termination (Certbot) and secure audio proxying |
+| **Sync Service** | Real-time background sync between Icecast and DB |
+| **Docker Compose** | Orchestrates Next.js, Icecast, Postgres, and Sync |
 
 ---
 

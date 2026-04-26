@@ -1,0 +1,5 @@
+FROM node:20-alpine
+WORKDIR /app
+RUN npm install @supabase/supabase-js
+COPY scripts/sync-listeners.js ./scripts/
+CMD ["node", "scripts/sync-listeners.js"]

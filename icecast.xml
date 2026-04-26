@@ -1,51 +1,55 @@
-&lt;icecast&gt;
-  &lt;location&gt;Streamz Server&lt;/location&gt;
-  &lt;admin&gt;
-    &lt;icename&gt;Streamz DJ Platform&lt;/icename&gt;
-  &lt;/admin&gt;
+<icecast>
+    <location>Streamz Server</location>
+    <admin>admin@localhost</admin>
+    <hostname>localhost</hostname>
 
-  &lt;limits&gt;
-    &lt;clients&gt;10000&lt;/clients&gt;
-    &lt;sources&gt;20&lt;/sources&gt;
-    &lt;queue-size&gt;524288&lt;/queue-size&gt;
-    &lt;client-timeout&gt;30&lt;/client-timeout&gt;
-    &lt;header-timeout&gt;15&lt;/header-timeout&gt;
-    &lt;source-timeout&gt;10&lt;/source-timeout&gt;
-    &lt;burst-size&gt;65536&lt;/burst-size&gt;
-  &lt;/limits&gt;
+    <limits>
+        <clients>10000</clients>
+        <sources>20</sources>
+        <queue-size>524288</queue-size>
+        <client-timeout>30</client-timeout>
+        <header-timeout>15</header-timeout>
+        <source-timeout>10</source-timeout>
+        <burst-size>65536</burst-size>
+    </limits>
 
-  &lt;authentication&gt;
-    &lt;source-password&gt;hackme&lt;/source-password&gt;
-    &lt;admin-user&gt;admin&lt;/admin-user&gt;
-    &lt;admin-password&gt;hackme&lt;/admin-password&gt;
-  &lt;/authentication&gt;
+    <authentication>
+        <source-password>changeme</source-password>
+        <relay-password>changeme</relay-password>
+        <admin-user>admin</admin-user>
+        <admin-password>changeme</admin-password>
+    </authentication>
 
-  &lt;shoutcast-mount&gt;/shoutcast.mp3&lt;/shoutcast-mount&gt;
+    <listen-socket>
+        <port>8000</port>
+    </listen-socket>
 
-  &lt;fileserve&gt;1&lt;/fileserve&gt;
+    <fileserve>1</fileserve>
 
-  &lt;paths&gt;
-    &lt;logdir&gt;/var/log/icecast&lt;/logdir&gt;
-    &lt;webroot&gt;/usr/share/icecast/doc/icecast_web&lt;/webroot&gt;
-    &lt;adminroot&gt;/usr/share/icecast/doc/icecast_admin&lt;/adminroot&gt;
-    &lt;alias source=&quot;/&quot; dest=&quot;/status.xsl&quot;/&gt;
-  &lt;/paths&gt;
+    <paths>
+        <logdir>/var/log/icecast2</logdir>
+        <webroot>/usr/share/icecast2/web</webroot>
+        <adminroot>/usr/share/icecast2/admin</adminroot>
+        <alias source="/" dest="/status.xsl"/>
+    </paths>
 
-  &lt;logging&gt;
-    &lt;accesslog>access.log&lt;/accesslog&gt;
-    &lt;errorlog>error.log&lt;/errorlog&gt;
-    &lt;loglevel>3&lt;/loglevel&gt;
-    &lt;logsize&gt;10000&lt;/logsize&gt;
-  &lt;/logging&gt;
+    <logging>
+        <accesslog>access.log</accesslog>
+        <errorlog>error.log</errorlog>
+        <loglevel>3</loglevel>
+        <logsize>10000</logsize>
+    </logging>
 
-  &lt;security&gt;
-    &lt;chroot&gt;0&lt;/chroot&gt;
-  &lt;/security&gt;
+    <security>
+        <chroot>0</chroot>
+        <changeowner>
+            <user>icecast2</user>
+            <group>icecast</group>
+        </changeowner>
+    </security>
 
-  &lt;mount name=&quot;/live/*&quot;&gt;
-    &lt;dump-file&gt;/tmp/dumpfiles/%Y-%m-%d_%H-%M-%S.mp3&lt;/dump-file&gt;
-    &lt;public&gt;0&lt;/public&gt;
-    &lt;fallback-mount&gt;/silence.mp3&lt;/fallback-mount&gt;
-    &lt;fallback-override&gt;1&lt;/fallback-override&gt;
-  &lt;/mount&gt;
-&lt;/icecast&gt;
+    <mount name="/live/*">
+        <dump-file>/tmp/dumpfiles/%Y-%m-%d_%H-%M-%S.mp3</dump-file>
+        <public>0</public>
+    </mount>
+</icecast>

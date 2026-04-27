@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 interface SidebarProps {
-  active?: 'home' | 'dashboard' | 'profile' | 'mixes'
+  active?: 'home' | 'dashboard' | 'profile' | 'mixes' | 'admin'
 }
 
 export default function Sidebar({ active = 'home' }: SidebarProps) {
@@ -49,6 +49,15 @@ export default function Sidebar({ active = 'home' }: SidebarProps) {
             <circle cx="12" cy="7" r="4" />
           </svg>
           Profile
+        </Link>
+        <Link
+          href="/admin"
+          className={`sidebar-link ${active === 'admin' ? 'sidebar-link-active' : ''}`}
+        >
+          <svg className="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+          Admin Panel
         </Link>
       </nav>
     </aside>

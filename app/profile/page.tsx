@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
+import { revalidatePath } from 'next/cache'
 
 export default async function ProfilePage() {
   const supabase = await createClient()
@@ -11,6 +12,28 @@ export default async function ProfilePage() {
 
   const { data: profile } = await supabase.from('profiles').select().eq('id', user.id).single()
 
+  async function updateProfile(formData: FormData) {
+    'use server'
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const username = formData.get('username') as string
+    const email = formData.get('email') as string
+
+    // Update Profile
+    if (username) {
+      await supabase.from('profiles').update({ username }).eq('id', user.id)
+    }
+
+    // Update Email (Supabase handles re-verification)
+    if (email && email !== user.email) {
+      await supabase.auth.updateUser({ email })
+    }
+
+    revalidatePath('/profile')
+  }
+
   return (
     <>
       <Sidebar active="profile" />
@@ -18,34 +41,48 @@ export default async function ProfilePage() {
         <Topbar userEmail={user.email} />
 
         <div style={{ padding: '28px 32px', maxWidth: '640px' }}>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#fff', marginBottom: '28px' }}>Profile</h1>
+          <h1 className="neon-text" style={{ fontSize: '2.2rem', fontWeight: 900, marginBottom: '28px' }}>Profile Settings</h1>
 
           <div className="dash-section">
-            <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '14px 24px', fontSize: '0.9375rem' }}>
-              <span style={{ color: 'var(--muted)', fontSize: '0.8125rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Email</span>
-              <span style={{ color: '#fff' }}>{user.email}</span>
+            <form action={updateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div>
+                <label className="form-label">Email Address</label>
+                <input 
+                  name="email" 
+                  type="email" 
+                  defaultValue={user.email} 
+                  className="form-input" 
+                  placeholder="your@email.com"
+                />
+                <p style={{ fontSize: '0.7rem', color: 'var(--muted)', marginTop: '6px' }}>
+                  Note: Changing your email will require re-verification.
+                </p>
+              </div>
 
-              {profile?.username && (
-                <>
-                  <span style={{ color: 'var(--muted)', fontSize: '0.8125rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>DJ Name</span>
-                  <span style={{ color: '#fff' }}>{profile.username}</span>
-                </>
-              )}
-
-              {profile?.full_name && (
-                <>
-                  <span style={{ color: 'var(--muted)', fontSize: '0.8125rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Full Name</span>
-                  <span style={{ color: '#fff' }}>{profile.full_name}</span>
-                </>
-              )}
+              <div>
+                <label className="form-label">DJ Name (Public)</label>
+                <input 
+                  name="username" 
+                  type="text" 
+                  defaultValue={profile?.username || ''} 
+                  className="form-input" 
+                  placeholder="DJ Awesome"
+                />
+              </div>
 
               {profile?.role && (
-                <>
-                  <span style={{ color: 'var(--muted)', fontSize: '0.8125rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Role</span>
-                  <span style={{ color: '#fff', textTransform: 'capitalize' }}>{profile.role}</span>
-                </>
+                <div>
+                  <label className="form-label">Account Role</label>
+                  <div style={{ color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase', fontSize: '0.9rem' }}>
+                    {profile.role}
+                  </div>
+                </div>
               )}
-            </div>
+
+              <button type="submit" className="form-btn form-btn-blue" style={{ marginTop: '10px' }}>
+                Save Changes
+              </button>
+            </form>
           </div>
         </div>
       </div>

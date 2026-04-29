@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
+import { useEffect, useState, useRef, useMemo } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 interface Message {
   id: string
@@ -17,12 +17,11 @@ export default function LiveChat({ streamId, djId }: { streamId: string, djId: s
   const [userId, setUserId] = useState<string | null>(null)
   const [bannedUsers, setBannedUsers] = useState<string[]>([])
   const [mods, setMods] = useState<string[]>([])
+  const [sending, setSending] = useState(false)
   const chatScrollRef = useRef<HTMLDivElement>(null)
-  
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+
+  // Stable client reference — no re-creation on every render
+  const supabase = useMemo(() => createClient(), [])
 
   // Fetch initial messages & user status
   useEffect(() => {
@@ -108,18 +107,34 @@ export default function LiveChat({ streamId, djId }: { streamId: string, djId: s
   const isOp = userId === djId
   const isMod = isOp || (username && mods.includes(username))
 
+  // ── Send message through authenticated API route ──
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!input.trim() || !username) return
+    if (!input.trim() || !username || sending) return
     
     const msg = input.trim()
     setInput('') // Optimistic clear
+    setSending(true)
 
-    await supabase.from('chat_messages').insert({
-      stream_id: streamId,
-      username: username,
-      message: msg
-    })
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stream_id: streamId, message: msg }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        console.error('Chat send failed:', data.error)
+        // Restore input on failure
+        setInput(msg)
+      }
+    } catch (err) {
+      console.error('Chat send error:', err)
+      setInput(msg)
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
@@ -197,8 +212,9 @@ export default function LiveChat({ streamId, djId }: { streamId: string, djId: s
               className="form-input"
               style={{ flex: 1, height: '36px', padding: '0 12px', fontSize: '0.875rem' }}
               maxLength={200}
+              disabled={sending}
             />
-            <button type="submit" className="form-btn-blue" style={{ height: '36px', padding: '0 16px', fontSize: '0.875rem' }}>
+            <button type="submit" className="form-btn-blue" style={{ height: '36px', padding: '0 16px', fontSize: '0.875rem' }} disabled={sending}>
               Send
             </button>
           </form>

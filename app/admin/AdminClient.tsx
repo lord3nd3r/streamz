@@ -1,28 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
 
-export default function AdminClient({ initialStats, initialUsers }: { initialStats: any, initialUsers: any[] }) {
+interface AdminClientProps {
+  initialStats: any
+  initialUsers: any[]
+  toggleAdminAction: (formData: FormData) => Promise<void>
+  toggleBanAction: (formData: FormData) => Promise<void>
+}
+
+export default function AdminClient({ initialStats, initialUsers, toggleAdminAction, toggleBanAction }: AdminClientProps) {
   const [users, setUsers] = useState(initialUsers)
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-
-  const toggleAdmin = async (userId: string, currentStatus: boolean) => {
-    const { error } = await supabase.from('profiles').update({ is_admin: !currentStatus }).eq('id', userId)
-    if (!error) {
-      setUsers(users.map(u => u.id === userId ? { ...u, is_admin: !currentStatus } : u))
-    }
-  }
-
-  const toggleBan = async (userId: string, currentStatus: boolean) => {
-    const { error } = await supabase.from('profiles').update({ is_banned: !currentStatus }).eq('id', userId)
-    if (!error) {
-      setUsers(users.map(u => u.id === userId ? { ...u, is_banned: !currentStatus } : u))
-    }
-  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
@@ -79,24 +67,42 @@ export default function AdminClient({ initialStats, initialUsers }: { initialSta
                     </div>
                   </td>
                   <td style={{ padding: '16px', textAlign: 'right' }}>
-                    <button 
-                      onClick={() => toggleAdmin(user.id, user.is_admin)}
-                      style={{ 
-                        background: user.is_admin ? 'rgba(255,255,255,0.1)' : 'var(--accent)', 
-                        border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', marginRight: '8px' 
-                      }}
-                    >
-                      {user.is_admin ? 'Demote' : 'Make Admin'}
-                    </button>
-                    <button 
-                      onClick={() => toggleBan(user.id, user.is_banned)}
-                      style={{ 
-                        background: user.is_banned ? '#10b981' : '#ef4444', 
-                        border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' 
-                      }}
-                    >
-                      {user.is_banned ? 'Unban' : 'Ban'}
-                    </button>
+                    <div style={{ display: 'inline-flex', gap: '8px' }}>
+                      <form action={async (formData) => {
+                        await toggleAdminAction(formData)
+                        // Optimistic update
+                        setUsers(prev => prev.map(u => u.id === user.id ? { ...u, is_admin: !user.is_admin } : u))
+                      }}>
+                        <input type="hidden" name="user_id" value={user.id} />
+                        <input type="hidden" name="current_status" value={user.is_admin?.toString() || 'false'} />
+                        <button 
+                          type="submit"
+                          style={{ 
+                            background: user.is_admin ? 'rgba(255,255,255,0.1)' : 'var(--accent)', 
+                            border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer'
+                          }}
+                        >
+                          {user.is_admin ? 'Demote' : 'Make Admin'}
+                        </button>
+                      </form>
+                      <form action={async (formData) => {
+                        await toggleBanAction(formData)
+                        // Optimistic update
+                        setUsers(prev => prev.map(u => u.id === user.id ? { ...u, is_banned: !user.is_banned } : u))
+                      }}>
+                        <input type="hidden" name="user_id" value={user.id} />
+                        <input type="hidden" name="current_status" value={user.is_banned?.toString() || 'false'} />
+                        <button 
+                          type="submit"
+                          style={{ 
+                            background: user.is_banned ? '#10b981' : '#ef4444', 
+                            border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' 
+                          }}
+                        >
+                          {user.is_banned ? 'Unban' : 'Ban'}
+                        </button>
+                      </form>
+                    </div>
                   </td>
                 </tr>
               ))}

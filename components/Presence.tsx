@@ -1,13 +1,11 @@
 'use client'
 
-import { useEffect } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
+import { useEffect, useMemo } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 export default function Presence() {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  // Stable client reference — no re-creation on every render
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     const updatePresence = async () => {

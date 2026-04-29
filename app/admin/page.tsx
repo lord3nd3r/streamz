@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
 import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 import AdminClient from './AdminClient'
@@ -21,6 +22,47 @@ export default async function AdminPage() {
 
   if (!profile?.is_admin) {
     redirect('/')
+  }
+
+  // ── Server actions with admin re-verification ──
+  async function toggleAdmin(formData: FormData) {
+    'use server'
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    // Re-verify caller is admin
+    const { data: caller } = await supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+    if (!caller?.is_admin) return
+
+    const targetId = formData.get('user_id') as string
+    const currentStatus = formData.get('current_status') === 'true'
+    await supabase.from('profiles').update({ is_admin: !currentStatus }).eq('id', targetId)
+    revalidatePath('/admin')
+  }
+
+  async function toggleBan(formData: FormData) {
+    'use server'
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    // Re-verify caller is admin
+    const { data: caller } = await supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+    if (!caller?.is_admin) return
+
+    const targetId = formData.get('user_id') as string
+    const currentStatus = formData.get('current_status') === 'true'
+    await supabase.from('profiles').update({ is_banned: !currentStatus }).eq('id', targetId)
+    revalidatePath('/admin')
   }
 
   // Fetch initial stats
@@ -52,7 +94,12 @@ export default async function AdminPage() {
             Real-time site management and user moderation.
           </p>
 
-          <AdminClient initialStats={stats} initialUsers={users || []} />
+          <AdminClient
+            initialStats={stats}
+            initialUsers={users || []}
+            toggleAdminAction={toggleAdmin}
+            toggleBanAction={toggleBan}
+          />
         </div>
       </div>
     </>

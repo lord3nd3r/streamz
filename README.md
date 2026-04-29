@@ -2,7 +2,7 @@
 
 **Live DJ streaming platform** built with Next.js 16, Supabase, and Icecast — styled after [DI.FM](https://di.fm).
 
-DJs register, create stream mounts, and broadcast live audio through Icecast. Listeners browse live streams grouped by electronic music genres in a rich, art-heavy interface with horizontal-scrolling card rows, a fixed sidebar, a sticky top bar, and a global persistent audio player featuring a 7-mode audio visualizer. Recordings are automatically captured and managed through the dashboard.
+DJs register, create stream mounts, and broadcast live audio through Icecast. Listeners browse live streams grouped by electronic music genres in a rich, art-heavy interface with horizontal-scrolling card rows, a fixed sidebar, a sticky top bar, and a global persistent audio player featuring a WebGL MilkDrop-style audio visualizer with 8 shader presets. Recordings are automatically captured and managed through the dashboard.
 
 ---
 
@@ -16,7 +16,7 @@ The UI is inspired by **DI.FM** (Digitally Imported) — a premium electronic mu
 - **Horizontal-scrolling card rows** — featured hero cards (wide) and channel tiles (square)
 - **Art-heavy stream cards** — full-bleed artwork (procedural or custom), live badges, hover scale, and quick 'Direct MP3' copy links
 - **Persistent Global Player** — audio continues playing while navigating the site
-- **Audio Visualizer** — Milkdrop-inspired canvas visualizer with 7 trippy modes (Vortex, Kaleidoscope, Tunnel, Pulse, Wave, Nebula, Prism)
+- **Audio Visualizer** — WebGL MilkDrop/Geiss-inspired visualizer with 8 GLSL shader presets featuring feedback loops, warp tunnels, plasma, kaleidoscopes, fractals, and fullscreen mode
 - **Real-time Chat** — per-stream community chat with DJ moderation (Delete, Mod, Ban)
 - **Mix Archive** — DJs can publish recorded sets (VODs) to a public library
 - **Admin Control Center** — Site-wide stats, user management, and moderation tools
@@ -207,7 +207,13 @@ streamz/
 │   ├── login/page.tsx          # Login (client component)
 │   ├── register/page.tsx       # Registration (client component)
 │   ├── dashboard/page.tsx      # DJ dashboard (server actions to create, update, delete streams)
-│   ├── profile/page.tsx        # User profile (server component)
+│   ├── profile/page.tsx        # User profile viewer
+│   ├── admin/
+│   │   ├── page.tsx            # Admin control center (server component)
+│   │   └── AdminClient.tsx     # Admin actions (ban, promote)
+│   ├── stream/[id]/page.tsx    # Stream detail page with player, chat, visualizer
+│   ├── genre/[name]/page.tsx   # Genre-filtered stream listing
+│   ├── mixes/page.tsx          # Published mix archive
 │   └── api/
 │       └── recordings/
 │           ├── route.ts        # GET — list recordings
@@ -219,17 +225,24 @@ streamz/
 │   ├── RecordingsManager.tsx   # Client component for recordings
 │   ├── GlobalPlayer.tsx        # Persistent audio player fixed to the bottom
 │   ├── HomeClient.tsx          # Homepage client view with genre grouping
-│   └── Visualizer.tsx          # 7-mode HTML5 Canvas audio visualizer
+│   ├── Visualizer.tsx          # WebGL MilkDrop-style visualizer (entry point)
+│   ├── LiveChat.tsx            # Per-stream real-time chat with DJ moderation
+│   ├── Presence.tsx            # User presence tracking (last_seen heartbeat)
+│   ├── AvatarUpload.tsx        # DJ cover art / avatar upload
+│   └── visualizer/
+│       ├── engine.ts           # WebGL engine with feedback-loop rendering
+│       └── shaders.ts          # 8 GLSL fragment shader presets
+├── context/
+│   └── AudioContext.tsx        # Global audio state with auto-recovery
 ├── lib/
 │   └── supabase/
 │       ├── client.ts           # Browser Supabase client
 │       └── server.ts           # Server Supabase client (async)
+├── scripts/
+│   ├── sync-listeners.js       # Resilient Icecast↔DB sync daemon
+│   └── Dockerfile.sync         # Container for sync service
 ├── public/
-│   └── art/                    # Generated channel artwork
-│       ├── 1.png               # Purple/blue neon cityscape
-│       ├── 2.png               # Orange/magenta turntable
-│       ├── 3.png               # Teal bioluminescent
-│       └── 4.png               # Green matrix vinyl
+│   └── art/                    # Generated channel artwork (1–4.png)
 ├── types/
 │   └── supabase.ts             # Database types
 ├── middleware.ts                # Auth guard (session refresh)
@@ -255,7 +268,11 @@ streamz/
 | `/login` | Client | No | Branded login card with gradient logo |
 | `/register` | Client | No | Registration with DJ Name field |
 | `/dashboard` | Server | Yes | DJ control panel — streams, recordings, config |
-| `/profile` | Server | Yes | User profile viewer |
+| `/profile` | Server | Yes | User profile editor |
+| `/stream/[id]` | Client | No | Stream detail — player, visualizer, live chat |
+| `/genre/[name]` | Server | No | Genre-filtered stream listing |
+| `/mixes` | Server | No | Published mix archive |
+| `/admin` | Server | Yes (Admin) | Admin control center — stats, user management |
 | `/api/recordings` | API | Yes | `GET` — list MP3 recordings |
 | `/api/recordings/[name]` | API | Yes | `DELETE` — remove a recording |
 

@@ -18,7 +18,7 @@ The Icecast server is configured via [`icecast.xml`](../icecast.xml) and runs as
 | Max clients | `10,000` | Maximum concurrent listeners |
 | Max sources | `20` | Maximum concurrent DJ streams |
 | Queue size | `512 KB` | Per-client buffer |
-| Source timeout | `10s` | Disconnect idle sources after 10s |
+| Source timeout | `30s` | Disconnect idle sources after 30s |
 | Mount pattern | `/live/*` | Wildcard mount for all DJ streams |
 
 ### Authentication
@@ -152,4 +152,4 @@ This works in:
 | Stream doesn't appear on home page | `is_live` not set | Check the dashboard — is the stream marked as live? |
 | No recordings appearing | Icecast container can't write | Check volume mount permissions for `./recordings/` |
 | Audio stuttering | High source timeout or low queue | Increase `queue-size` and `burst-size` in `icecast.xml` |
-| "Mount in use" error | Previous source didn't disconnect | Wait for `source-timeout` (10s) or restart Icecast |
+| "Mount in use" error | Previous source didn't disconnect | Wait for `source-timeout` (30s) or restart Icecast |

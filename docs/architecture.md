@@ -100,7 +100,29 @@ Audio player → HTTP GET → Icecast :8000/live/[mount]
 | `RecordingsManager` | Client | Fetch + display + delete recordings via API |
 | `HomeClient` | Client | Renders live streams grouped dynamically by genre category |
 | `GlobalPlayer` | Client | App-wide audio element state manager using React Context |
-| `Visualizer` | Client | HTML5 Canvas drawing 7 audio-reactive modes (Vortex, Tunnel, etc.) |
+| `Visualizer` | Client | WebGL MilkDrop-style visualizer with 8 GLSL shader presets and feedback loops |
+| `LiveChat` | Client | Per-stream real-time chat with DJ moderation (delete, mod, ban) |
+| `Presence` | Client | User presence heartbeat (updates `last_seen` every 2 minutes) |
+| `AvatarUpload` | Client | DJ cover art / avatar image upload to Supabase storage |
+
+### Visualizer Engine (`components/visualizer/`)
+
+The visualizer uses a WebGL pipeline inspired by MilkDrop/Geiss from Winamp:
+
+| File | Role |
+|------|------|
+| `engine.ts` | WebGL rendering engine with ping-pong framebuffers for feedback-loop effects |
+| `shaders.ts` | 8 GLSL fragment shader presets (Warp Tunnel, Plasma Morph, Kaleidoscope, Starfield, Fractal Wave, Liquid Mirror, Geiss Pulse, Acid Worm) |
+
+Audio data is split into bass/mid/treble bands with attack/release smoothing and passed as shader uniforms. Each frame renders into a framebuffer, and the previous frame is fed back as a texture to create the characteristic MilkDrop trail/warp effects.
+
+### Audio Context (`context/AudioContext.tsx`)
+
+The global audio provider manages playback state across all pages with:
+- **Auto-recovery**: Uses `useRef` mirrors to avoid stale closures in long-lived error handlers
+- **Exponential backoff retry**: 1s → 2s → 4s → ... → 15s max on stream errors
+- **Stall detection**: Forces reconnection if buffering exceeds 20 seconds
+- **Fresh URL on resume**: Appends timestamp to bypass caches and rejoin at live position
 
 ### CSS Design System (`globals.css`)
 
@@ -150,6 +172,19 @@ The design system is inspired by DI.FM and uses custom CSS classes (not Tailwind
 | Source input | Any Icecast-compatible source (OBS, IceS, BUTT) |
 | Auto-recording | `dump-file` directive → `recordings/` directory |
 | Mount pattern | `/live/*` wildcard mount |
+| Source timeout | `30s` — tolerates brief encoder hiccups for 24/7 streaming |
+
+### Sync Service (`scripts/sync-listeners.js`)
+
+A resilient Node.js daemon that polls Icecast every 10 seconds and syncs stream/listener state to Supabase:
+
+| Feature | Implementation |
+|---------|---------------|
+| Crash protection | Global `uncaughtException` / `unhandledRejection` handlers prevent silent death |
+| Request timeout | 8s `AbortSignal.timeout` on Icecast fetch prevents hung requests |
+| Adaptive backoff | Consecutive failures increase delay up to 60s max |
+| Heartbeat logging | Logs uptime and sync count every ~5 minutes for monitoring |
+| Recording management | Spawns/kills `curl` processes to record active streams |
 
 ## Data Flow Diagram
 

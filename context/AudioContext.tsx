@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState, useRef, useEffect } from 'react'
+import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from 'react'
 
 interface AudioContextType {
   activeStream: any | null
@@ -23,22 +23,80 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const audioContextRef = useRef<AudioContext | null>(null)
   const sourceRef = useRef<MediaElementAudioSourceNode | null>(null)
 
+  // ── Use refs to avoid stale closures in long-lived callbacks ──
+  const activeStreamRef = useRef(activeStream)
+  const isPlayingRef = useRef(isPlaying)
+  const retryCountRef = useRef(0)
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => { activeStreamRef.current = activeStream }, [activeStream])
+  useEffect(() => { isPlayingRef.current = isPlaying }, [isPlaying])
+
   // Initialize audio object on client
   useEffect(() => {
-    audioRef.current = new Audio()
-    audioRef.current.crossOrigin = 'anonymous'
-    
-    // Recovery on error
-    audioRef.current.onerror = () => {
-      console.error('Audio error, attempting recovery...')
-      if (activeStream) {
-        audioRef.current!.src = `${activeStream.mount}?t=${Date.now()}`
-        audioRef.current!.load()
-        if (isPlaying) audioRef.current!.play()
-      }
+    const audio = new Audio()
+    audio.crossOrigin = 'anonymous'
+    // Prevent the browser from aggressively releasing the connection
+    audio.preload = 'auto'
+    audioRef.current = audio
+
+    // ── Robust error recovery using refs (never stale) ──
+    audio.onerror = () => {
+      const stream = activeStreamRef.current
+      const playing = isPlayingRef.current
+      if (!stream || !playing) return
+
+      retryCountRef.current++
+      const attempt = retryCountRef.current
+      // Exponential backoff: 1s, 2s, 4s, 8s, capped at 15s
+      const delay = Math.min(1000 * Math.pow(2, attempt - 1), 15000)
+
+      console.warn(`[AudioPlayer] Stream error (attempt ${attempt}), retrying in ${delay / 1000}s...`)
+
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current)
+      retryTimerRef.current = setTimeout(() => {
+        if (!audioRef.current || !activeStreamRef.current) return
+        // Bust any caches / force reconnect with a fresh timestamp
+        audioRef.current.src = `${activeStreamRef.current.mount}?t=${Date.now()}`
+        audioRef.current.load()
+        audioRef.current.play().then(() => {
+          console.log('[AudioPlayer] Recovered successfully.')
+          retryCountRef.current = 0
+        }).catch(err => {
+          console.error('[AudioPlayer] Recovery play failed:', err)
+        })
+      }, delay)
+    }
+
+    // Reset retry counter on successful playback
+    audio.onplaying = () => {
+      retryCountRef.current = 0
+    }
+
+    // ── Handle browser-level stalls (buffering that never resolves) ──
+    let stallTimer: ReturnType<typeof setTimeout> | null = null
+
+    audio.onwaiting = () => {
+      // If we're stuck buffering for 20 seconds, treat it as an error
+      if (stallTimer) clearTimeout(stallTimer)
+      stallTimer = setTimeout(() => {
+        if (audioRef.current && isPlayingRef.current && activeStreamRef.current) {
+          console.warn('[AudioPlayer] Stall detected (20s buffering), forcing reconnect...')
+          audioRef.current.src = `${activeStreamRef.current.mount}?t=${Date.now()}`
+          audioRef.current.load()
+          audioRef.current.play().catch(() => {})
+        }
+      }, 20000)
+    }
+
+    audio.onplaying = () => {
+      retryCountRef.current = 0
+      if (stallTimer) clearTimeout(stallTimer)
     }
 
     return () => {
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current)
+      if (stallTimer) clearTimeout(stallTimer)
       if (audioRef.current) {
         audioRef.current.pause()
         audioRef.current.src = ''
@@ -52,7 +110,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     }
   }, [volume])
 
-  const setupAudioContext = () => {
+  const setupAudioContext = useCallback(() => {
     if (!audioContextRef.current && audioRef.current) {
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
       const ctx = new AudioCtx()
@@ -71,14 +129,18 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     if (audioContextRef.current?.state === 'suspended') {
       audioContextRef.current.resume()
     }
-  }
+  }, [])
 
-  const playStream = (stream: any) => {
+  const playStream = useCallback((stream: any) => {
     if (!audioRef.current) return
     setupAudioContext()
 
     // If it's the same stream and already playing, do nothing
-    if (activeStream?.id === stream.id && isPlaying) return
+    if (activeStreamRef.current?.id === stream.id && isPlayingRef.current) return
+
+    // Reset retry state for new stream
+    retryCountRef.current = 0
+    if (retryTimerRef.current) clearTimeout(retryTimerRef.current)
 
     setActiveStream(stream)
     audioRef.current.src = `${stream.mount}?t=${Date.now()}`
@@ -89,27 +151,30 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       console.error('Playback failed:', err)
       setIsPlaying(false)
     })
-  }
+  }, [setupAudioContext])
 
-  const togglePlay = () => {
-    if (!audioRef.current || !activeStream) return
+  const togglePlay = useCallback(() => {
+    if (!audioRef.current || !activeStreamRef.current) return
     setupAudioContext()
 
-    if (isPlaying) {
+    if (isPlayingRef.current) {
       audioRef.current.pause()
       setIsPlaying(false)
     } else {
+      // On resume after pause, reconnect to get the live position
+      audioRef.current.src = `${activeStreamRef.current.mount}?t=${Date.now()}`
+      audioRef.current.load()
       audioRef.current.play().then(() => {
         setIsPlaying(true)
       }).catch(err => {
         console.error('Resume failed:', err)
       })
     }
-  }
+  }, [setupAudioContext])
 
-  const updateVolume = (val: number) => {
+  const updateVolume = useCallback((val: number) => {
     setVolume(val)
-  }
+  }, [])
 
   return (
     <AudioContext.Provider value={{ activeStream, isPlaying, volume, analyser, playStream, togglePlay, updateVolume }}>

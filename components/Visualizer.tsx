@@ -137,6 +137,10 @@ export default function Visualizer() {
   // Keyboard shortcuts in fullscreen
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // Ignore if typing in chat/input
+      const target = e.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
+
       if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextPreset() }
       else if (e.key === 'ArrowLeft') { e.preventDefault(); prevPreset() }
       else if (e.key === 'f' || e.key === 'F') toggleFullscreen()

@@ -276,7 +276,7 @@ export default function LiveChat({ streamId, djId }: { streamId: string, djId: s
       setInput(trimmed)
     } finally {
       setSending(false)
-      inputRef.current?.focus()
+      setTimeout(() => inputRef.current?.focus(), 0)
     }
   }, [input, username, sending, streamId])
 
@@ -516,7 +516,6 @@ export default function LiveChat({ streamId, djId }: { streamId: string, djId: s
                 fontFamily: 'inherit',
               }}
               maxLength={500}
-              disabled={sending}
               autoComplete="off"
               spellCheck={false}
             />

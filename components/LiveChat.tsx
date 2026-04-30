@@ -82,6 +82,8 @@ export default function LiveChat({ streamId, djId }: { streamId: string, djId: s
   const [showHelp, setShowHelp] = useState(false)
   const [userCount, setUserCount] = useState(0)
   const [ctxMenu, setCtxMenu] = useState<ContextMenu | null>(null)
+  const [history, setHistory] = useState<string[]>([])
+  const [historyIndex, setHistoryIndex] = useState(-1)
   const chatScrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const ctxMenuRef = useRef<HTMLDivElement>(null)
@@ -255,6 +257,8 @@ export default function LiveChat({ streamId, djId }: { streamId: string, djId: s
 
     const trimmed = input.trim()
     setInput('')
+    setHistory(prev => [trimmed, ...prev].slice(0, 50))
+    setHistoryIndex(-1)
 
     if (trimmed === '/help') { setShowHelp(prev => !prev); return }
     if (trimmed === '/clear') { setMessages([]); return }
@@ -280,7 +284,7 @@ export default function LiveChat({ streamId, djId }: { streamId: string, djId: s
     }
   }, [input, username, sending, streamId])
 
-  // Tab-complete commands
+  // Tab-complete commands & input history
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Tab' && input.startsWith('/')) {
       e.preventDefault()
@@ -288,6 +292,23 @@ export default function LiveChat({ streamId, djId }: { streamId: string, djId: s
       const match = COMMANDS.find(c => c.cmd.slice(1).startsWith(partial))
       if (match) {
         setInput(match.cmd.split(' ')[0] + ' ')
+      }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      if (history.length > 0) {
+        const nextIndex = historyIndex < history.length - 1 ? historyIndex + 1 : historyIndex
+        setHistoryIndex(nextIndex)
+        setInput(history[nextIndex])
+      }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      if (historyIndex > 0) {
+        const nextIndex = historyIndex - 1
+        setHistoryIndex(nextIndex)
+        setInput(history[nextIndex])
+      } else if (historyIndex === 0) {
+        setHistoryIndex(-1)
+        setInput('')
       }
     }
   }

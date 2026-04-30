@@ -159,7 +159,9 @@ export default function LiveChat({ streamId, djId }: { streamId: string, djId: s
     presenceChannel
       .on('presence', { event: 'sync' }, () => {
         const state = presenceChannel.presenceState()
-        setUserCount(Object.keys(state).length)
+        // Count total number of presence objects across all keys
+        const total = Object.values(state).reduce((acc, p) => acc + p.length, 0)
+        setUserCount(total)
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {

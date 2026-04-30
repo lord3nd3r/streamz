@@ -101,8 +101,8 @@ Audio player → HTTP GET → Icecast :8000/live/[mount]
 | `HomeClient` | Client | Renders live streams grouped dynamically by genre category |
 | `GlobalPlayer` | Client | App-wide audio element state manager using React Context |
 | `Visualizer` | Client | WebGL MilkDrop-style visualizer with 8 GLSL shader presets and feedback loops |
-| `LiveChat` | Client | Per-stream real-time chat with DJ moderation (delete, mod, ban) |
-| `Presence` | Client | User presence heartbeat (updates `last_seen` every 2 minutes) |
+| `LiveChat` | Client | Modernized IRCv3-style chat with `/me` support, command history, and context-menu moderation |
+| `Presence` | Client | Real-time user count via Supabase Presence (counts all active sessions) |
 | `AvatarUpload` | Client | DJ cover art / avatar image upload to Supabase storage |
 
 ### Visualizer Engine (`components/visualizer/`)
@@ -204,8 +204,8 @@ flowchart TD
 ## Security Model
 
 1. **Authentication**: Supabase handles email/password auth with JWT sessions stored in HTTP-only cookies
-2. **Middleware guard**: Unauthenticated requests to `/dashboard/*` are redirected to `/login`
-3. **Server actions**: Each action re-validates the user via `supabase.auth.getUser()` — never trusts client state
-4. **API routes**: Check authentication before any file operations
+2. **Middleware guard**: Unauthenticated requests to protected routes (`/dashboard/*`, `/admin/*`) are redirected to `/login`
+3. **Server actions**: Each mutation (create stream, delete mix, admin toggles) re-validates the user via `supabase.auth.getUser()` and checks relevant permissions (`is_admin`, `dj_id` match) server-side — never trusts client state
+4. **API routes**: Check authentication and authorization before any file operations or database writes. The chat API (`/api/chat`) derives the username from the database server-side to prevent spoofing.
 5. **File sanitization**: Recording filenames are sanitized with `path.basename()` and `.mp3` extension enforcement to prevent path traversal
 6. **Icecast passwords**: Configurable via environment variables, never hardcoded in production

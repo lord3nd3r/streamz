@@ -17,9 +17,9 @@ The UI is inspired by **DI.FM** (Digitally Imported) — a premium electronic mu
 - **Art-heavy stream cards** — full-bleed artwork (procedural or custom), live badges, hover scale, and quick 'Direct MP3' copy links
 - **Persistent Global Player** — audio continues playing while navigating the site
 - **Audio Visualizer** — WebGL MilkDrop/Geiss-inspired visualizer with 8 GLSL shader presets featuring feedback loops, warp tunnels, plasma, kaleidoscopes, fractals, and fullscreen mode
-- **Real-time Chat** — per-stream community chat with DJ moderation (Delete, Mod, Ban)
+- **Real-time Chat** — Modernized IRCv3-style chat with `/me` action support, deterministic nick coloring, timestamps, and DJ/Admin moderation via context menus (Delete, Mod, Ban)
 - **Mix Archive** — DJs can publish recorded sets (VODs) to a public library
-- **Admin Control Center** — Site-wide stats, user management, and moderation tools
+- **Admin Control Center** — Site-wide stats, user management, and moderation tools protected by server-side verification
 - **Mobile Responsive** — fluid layout with collapsed sidebar for phone browsing
 - **Custom Cover Art** — DJs can upload their own branding to streams and mixes
 

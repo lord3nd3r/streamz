@@ -22,6 +22,12 @@ interface ParsedMessage {
   raw: ChatMessage
 }
 
+interface ContextMenu {
+  x: number
+  y: number
+  nick: string
+}
+
 // Parse CTCP ACTION framing: \x01ACTION text\x01
 function parseMessage(msg: ChatMessage): ParsedMessage {
   let type: ParsedMessageType = 'PRIVMSG'
@@ -32,19 +38,24 @@ function parseMessage(msg: ChatMessage): ParsedMessage {
     text = text.slice(8, -1)
   }
 
-  return {
-    id: msg.id,
-    type,
-    username: msg.username,
-    text,
-    timestamp: new Date(msg.created_at),
-    raw: msg,
-  }
+  return { id: msg.id, type, username: msg.username, text, timestamp: new Date(msg.created_at), raw: msg }
 }
 
-// Format timestamp as HH:MM (IRC convention)
+// Format timestamp as HH:MM
 function formatTime(date: Date): string {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+}
+
+// IRC-style nick coloring (deterministic hash → HSL)
+function getNickColor(nick: string): string {
+  let hash = 0
+  for (let i = 0; i < nick.length; i++) {
+    hash = nick.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  const hue = ((hash % 360) + 360) % 360
+  const saturation = 70 + (Math.abs(hash >> 8) % 30)
+  const lightness = 55 + (Math.abs(hash >> 16) % 20)
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`
 }
 
 // ── Slash command help ──
@@ -63,20 +74,29 @@ export default function LiveChat({ streamId, djId }: { streamId: string, djId: s
   const [input, setInput] = useState('')
   const [username, setUsername] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
+  const [djUsername, setDjUsername] = useState<string | null>(null)
+  const [siteAdmins, setSiteAdmins] = useState<string[]>([])
   const [bannedUsers, setBannedUsers] = useState<string[]>([])
   const [mods, setMods] = useState<string[]>([])
   const [sending, setSending] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
   const [userCount, setUserCount] = useState(0)
+  const [ctxMenu, setCtxMenu] = useState<ContextMenu | null>(null)
   const chatScrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const ctxMenuRef = useRef<HTMLDivElement>(null)
 
-  // Stable client reference
   const supabase = useMemo(() => createClient(), [])
 
-  // Fetch initial data
+  // ── Init: fetch DJ, admins, user, bans, mods, messages ──
   useEffect(() => {
     const init = async () => {
+      const { data: djProfile } = await supabase.from('profiles').select('username').eq('id', djId).single()
+      if (djProfile?.username) setDjUsername(djProfile.username)
+
+      const { data: admins } = await supabase.from('profiles').select('username').eq('is_admin', true)
+      if (admins) setSiteAdmins(admins.map(a => a.username).filter(Boolean) as string[])
+
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setUserId(user.id)
@@ -102,7 +122,7 @@ export default function LiveChat({ streamId, djId }: { streamId: string, djId: s
     }
     init()
 
-    // ── Realtime subscriptions ──
+    // Realtime subscriptions
     const channel = supabase
       .channel(`chat_${streamId}`)
       .on('postgres_changes', {
@@ -130,7 +150,7 @@ export default function LiveChat({ streamId, djId }: { streamId: string, djId: s
       })
       .subscribe()
 
-    // ── Presence channel for user count ──
+    // Presence channel for user count
     const presenceChannel = supabase.channel(`presence_${streamId}`, {
       config: { presence: { key: 'user' } }
     })
@@ -149,7 +169,7 @@ export default function LiveChat({ streamId, djId }: { streamId: string, djId: s
       supabase.removeChannel(channel)
       supabase.removeChannel(presenceChannel)
     }
-  }, [streamId, supabase])
+  }, [streamId, djId, supabase])
 
   // Auto-scroll
   useEffect(() => {
@@ -158,10 +178,77 @@ export default function LiveChat({ streamId, djId }: { streamId: string, djId: s
     }
   }, [messages])
 
+  // Close context menu on click outside or Escape
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (ctxMenuRef.current && !ctxMenuRef.current.contains(e.target as Node)) {
+        setCtxMenu(null)
+      }
+    }
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setCtxMenu(null)
+    }
+    document.addEventListener('mousedown', handleClick)
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('mousedown', handleClick)
+      document.removeEventListener('keydown', handleKey)
+    }
+  }, [])
+
   const isOp = userId === djId
   const isMod = isOp || (username && mods.includes(username))
 
-  // ── Handle local-only commands + send to API ──
+  // IRC-style nick prefix: ~ for site admin, @ for channel DJ/mod
+  const getNickPrefix = (nick: string): { char: string, color: string } | null => {
+    if (siteAdmins.includes(nick)) return { char: '~', color: '#f59e0b' }
+    if (nick === djUsername || mods.includes(nick)) return { char: '@', color: '#10b981' }
+    return null
+  }
+
+  // ── Right-click context menu on nick ──
+  const handleNickContext = (e: React.MouseEvent, nick: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    // Position relative to the chat container
+    const chatRect = chatScrollRef.current?.parentElement?.getBoundingClientRect()
+    const x = e.clientX - (chatRect?.left || 0)
+    const y = e.clientY - (chatRect?.top || 0)
+    setCtxMenu({ x, y, nick })
+  }
+
+  // Context menu actions
+  const ctxAction = async (action: string) => {
+    if (!ctxMenu) return
+    const nick = ctxMenu.nick
+    setCtxMenu(null)
+
+    switch (action) {
+      case 'ban':
+        setBannedUsers(prev => [...prev, nick])
+        await supabase.from('chat_bans').insert({ stream_id: streamId, banned_username: nick })
+        break
+      case 'mod':
+        setMods(prev => [...prev, nick])
+        await supabase.from('chat_mods').insert({ stream_id: streamId, mod_username: nick })
+        break
+      case 'demod':
+        setMods(prev => prev.filter(m => m !== nick))
+        await supabase.from('chat_mods').delete().eq('stream_id', streamId).eq('mod_username', nick)
+        break
+      case 'purge':
+        // Delete all messages from this user in this stream
+        setMessages(prev => prev.filter(m => m.username !== nick))
+        await supabase.from('chat_messages').delete().eq('stream_id', streamId).eq('username', nick)
+        break
+      case 'mention':
+        setInput(prev => `${prev}${nick}: `)
+        inputRef.current?.focus()
+        break
+    }
+  }
+
+  // Send message
   const sendMessage = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
     if (!input.trim() || !username || sending) return
@@ -169,19 +256,8 @@ export default function LiveChat({ streamId, djId }: { streamId: string, djId: s
     const trimmed = input.trim()
     setInput('')
 
-    // Client-only commands
-    if (trimmed === '/help') {
-      setShowHelp(prev => !prev)
-      return
-    }
-    if (trimmed === '/clear') {
-      setMessages([])
-      return
-    }
-    if (trimmed === '/users') {
-      // Show user count as a local notice
-      return
-    }
+    if (trimmed === '/help') { setShowHelp(prev => !prev); return }
+    if (trimmed === '/clear') { setMessages([]); return }
 
     setSending(true)
     try {
@@ -211,16 +287,39 @@ export default function LiveChat({ streamId, djId }: { streamId: string, djId: s
       const partial = input.slice(1).toLowerCase()
       const match = COMMANDS.find(c => c.cmd.slice(1).startsWith(partial))
       if (match) {
-        const cmdWord = match.cmd.split(' ')[0]
-        setInput(cmdWord + ' ')
+        setInput(match.cmd.split(' ')[0] + ' ')
       }
     }
   }
 
-  // Parse all messages for rendering
   const parsed = messages
     .filter(m => !bannedUsers.includes(m.username))
     .map(parseMessage)
+
+  // ── Render a clickable nick with prefix ──
+  const renderNick = (nick: string, isAction: boolean = false) => {
+    const prefix = getNickPrefix(nick)
+    const isSelf = nick === username
+    const color = isSelf ? '#fff' : getNickColor(nick)
+
+    return (
+      <span
+        onContextMenu={(e) => handleNickContext(e, nick)}
+        style={{ cursor: isMod ? 'context-menu' : 'default' }}
+      >
+        {prefix && (
+          <span style={{ color: prefix.color, marginRight: isAction ? '0' : '2px' }}>
+            {prefix.char}
+          </span>
+        )}
+        {isAction ? (
+          <span style={{ color: getNickColor(nick), fontWeight: 700 }}>{nick}</span>
+        ) : (
+          <span style={{ color, fontWeight: 700 }}>{`<${nick}>`}</span>
+        )}
+      </span>
+    )
+  }
 
   return (
     <div style={{
@@ -229,6 +328,7 @@ export default function LiveChat({ streamId, djId }: { streamId: string, djId: s
       border: '1px solid var(--border-color)',
       borderRadius: '16px', overflow: 'hidden',
       fontFamily: 'var(--font-geist-mono), "JetBrains Mono", "Fira Code", monospace',
+      position: 'relative',
     }}>
       {/* ── Channel header ── */}
       <div style={{
@@ -269,7 +369,12 @@ export default function LiveChat({ streamId, djId }: { streamId: string, djId: s
               <span style={{ color: 'var(--muted)' }}>{c.desc}</span>
             </div>
           ))}
-          <div style={{ color: 'var(--muted)', marginTop: '6px', fontStyle: 'italic', fontSize: '0.65rem' }}>
+          {isMod && (
+            <div style={{ color: 'var(--muted)', marginTop: '8px', fontSize: '0.65rem', borderTop: '1px solid var(--border-color)', paddingTop: '8px' }}>
+              💡 Right-click a username for mod actions (ban, mod, purge)
+            </div>
+          )}
+          <div style={{ color: 'var(--muted)', marginTop: '4px', fontStyle: 'italic', fontSize: '0.65rem' }}>
             Tab to autocomplete commands
           </div>
         </div>
@@ -284,12 +389,8 @@ export default function LiveChat({ streamId, djId }: { streamId: string, djId: s
           <div
             key={msg.id}
             style={{
-              padding: '2px 16px',
-              fontSize: '0.8rem',
-              lineHeight: 1.5,
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: '0',
+              padding: '2px 16px', fontSize: '0.8rem', lineHeight: 1.5,
+              display: 'flex', alignItems: 'flex-start', gap: '0',
               transition: 'background 0.15s',
             }}
             onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
@@ -304,55 +405,14 @@ export default function LiveChat({ streamId, djId }: { streamId: string, djId: s
               {formatTime(msg.timestamp)}
             </span>
 
-            {/* Mod tools */}
-            {isMod && (
-              <div style={{ display: 'flex', gap: '2px', marginRight: '4px', flexShrink: 0 }}>
-                <button
-                  onClick={async () => {
-                    setMessages(prev => prev.filter(m => m.id !== msg.id));
-                    await supabase.from('chat_messages').delete().eq('id', msg.id);
-                  }}
-                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '9px', opacity: 0.4, padding: '0 1px' }}
-                  title="Delete"
-                >×</button>
-                {isOp && msg.username !== username && !mods.includes(msg.username) && (
-                  <button
-                    onClick={async () => {
-                      setMods(prev => [...prev, msg.username]);
-                      await supabase.from('chat_mods').insert({ stream_id: streamId, mod_username: msg.username });
-                    }}
-                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '9px', opacity: 0.4, padding: '0 1px' }}
-                    title="Mod"
-                  >+</button>
-                )}
-                {isOp && msg.username !== username && (
-                  <button
-                    onClick={async () => {
-                      setBannedUsers(prev => [...prev, msg.username]);
-                      await supabase.from('chat_bans').insert({ stream_id: streamId, banned_username: msg.username });
-                    }}
-                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '9px', opacity: 0.4, padding: '0 1px' }}
-                    title="Ban"
-                  >⊘</button>
-                )}
-              </div>
-            )}
-
             {/* Message content */}
             {msg.type === 'ACTION' ? (
               <span style={{ color: 'var(--muted)', fontStyle: 'italic' }}>
-                • <span style={{ color: getNickColor(msg.username), fontWeight: 700 }}>{msg.username}</span>{' '}{msg.text}
+                • {renderNick(msg.username, true)}{' '}{msg.text}
               </span>
             ) : (
               <span>
-                <span style={{ fontWeight: 700 }}>
-                  {mods.includes(msg.username) && <span style={{ color: '#10b981', marginRight: '2px' }}>@</span>}
-                  {msg.username === username && msg.raw.username === username ? (
-                    <span style={{ color: '#fff' }}>{`<${msg.username}>`}</span>
-                  ) : (
-                    <span style={{ color: getNickColor(msg.username) }}>{`<${msg.username}>`}</span>
-                  )}
-                </span>
+                {renderNick(msg.username)}
                 {' '}
                 <span style={{ color: 'rgba(255,255,255,0.85)' }}>{msg.text}</span>
               </span>
@@ -360,6 +420,69 @@ export default function LiveChat({ streamId, djId }: { streamId: string, djId: s
           </div>
         ))}
       </div>
+
+      {/* ── Right-click context menu ── */}
+      {ctxMenu && isMod && (
+        <div
+          ref={ctxMenuRef}
+          style={{
+            position: 'absolute',
+            left: Math.min(ctxMenu.x, 200),
+            top: ctxMenu.y,
+            background: '#0c1425',
+            border: '1px solid var(--border-color)',
+            borderRadius: '8px',
+            padding: '4px 0',
+            minWidth: '160px',
+            zIndex: 100,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+            fontSize: '0.75rem',
+            fontFamily: 'inherit',
+          }}
+        >
+          <div style={{
+            padding: '6px 12px', color: getNickColor(ctxMenu.nick),
+            fontWeight: 800, borderBottom: '1px solid var(--border-color)',
+            fontSize: '0.7rem',
+          }}>
+            {(() => {
+              const p = getNickPrefix(ctxMenu.nick)
+              return p ? `${p.char}${ctxMenu.nick}` : ctxMenu.nick
+            })()}
+          </div>
+
+          {/* Anyone can mention */}
+          <button onClick={() => ctxAction('mention')} style={ctxBtnStyle}>
+            💬 Mention
+          </button>
+
+          {/* Mod/Op actions */}
+          {isMod && ctxMenu.nick !== username && (
+            <>
+              <div style={{ height: '1px', background: 'var(--border-color)', margin: '4px 0' }} />
+              <button onClick={() => ctxAction('purge')} style={ctxBtnStyle}>
+                🗑️ Purge Messages
+              </button>
+              {isOp && (
+                <>
+                  {mods.includes(ctxMenu.nick) ? (
+                    <button onClick={() => ctxAction('demod')} style={ctxBtnStyle}>
+                      ⭐ Remove Mod
+                    </button>
+                  ) : (
+                    <button onClick={() => ctxAction('mod')} style={ctxBtnStyle}>
+                      ⭐ Make Mod
+                    </button>
+                  )}
+                  <button onClick={() => ctxAction('ban')} style={{ ...ctxBtnStyle, color: '#ef4444' }}>
+                    🚫 Ban from Chat
+                  </button>
+                </>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       {/* ── Input area ── */}
       <div style={{ padding: '10px 16px', borderTop: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.3)' }}>
@@ -421,15 +544,11 @@ export default function LiveChat({ streamId, djId }: { streamId: string, djId: s
   )
 }
 
-// ── IRC-style nick coloring (deterministic hash → hue) ──
-function getNickColor(nick: string): string {
-  let hash = 0
-  for (let i = 0; i < nick.length; i++) {
-    hash = nick.charCodeAt(i) + ((hash << 5) - hash)
-  }
-  // Avoid colors too close to background (dark blues) or too dim
-  const hue = ((hash % 360) + 360) % 360
-  const saturation = 70 + (Math.abs(hash >> 8) % 30) // 70-100%
-  const lightness = 55 + (Math.abs(hash >> 16) % 20)  // 55-75%
-  return `hsl(${hue}, ${saturation}%, ${lightness}%)`
+// Shared style for context menu buttons
+const ctxBtnStyle: React.CSSProperties = {
+  display: 'block', width: '100%', textAlign: 'left',
+  background: 'transparent', border: 'none',
+  color: 'var(--foreground)', padding: '6px 12px',
+  cursor: 'pointer', fontSize: '0.75rem',
+  fontFamily: 'inherit',
 }

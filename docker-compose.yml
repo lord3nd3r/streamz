@@ -11,14 +11,13 @@ services:
     volumes:
       - /app/node_modules
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL:-http://localhost:54321}
       - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY:-placeholder}
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-}
       - ICECAST_HOST=${ICECAST_HOST:-localhost}
       - ICECAST_PORT=${ICECAST_PORT:-8000}
-    stdin_open: true
-    tty: true
+    restart: unless-stopped
 
   postgres:
     image: postgres:15-alpine

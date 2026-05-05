@@ -34,10 +34,16 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (request.nextUrl.pathname.startsWith('/dashboard') && !user) {
+  // Protect authenticated routes
+  const isProtectedRoute = request.nextUrl.pathname.startsWith('/dashboard') ||
+                           request.nextUrl.pathname.startsWith('/admin') ||
+                           request.nextUrl.pathname.startsWith('/profile')
+
+  if (isProtectedRoute && !user) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
+  // Redirect logged-in users away from login page
   if (request.nextUrl.pathname === '/login' && user) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
@@ -47,6 +53,9 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/dashboard/:path*',
+    '/admin/:path*',
+    '/profile/:path*',
+    '/login',
   ],
 }

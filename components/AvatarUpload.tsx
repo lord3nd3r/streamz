@@ -45,6 +45,7 @@ export default function AvatarUpload({ userId, initialUrl }: { userId: string, i
 
       setAvatarUrl(publicUrl)
       alert('Cover art updated successfully!')
+      window.location.reload()
     } catch (error: any) {
       alert('Error uploading avatar: ' + error.message)
     } finally {

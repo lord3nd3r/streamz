@@ -1,7 +1,7 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function Login() {
@@ -9,6 +9,11 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [banned, setBanned] = useState(false)
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('banned') === '1') setBanned(true)
+  }, [])
   const router = useRouter()
   const supabase = createClient()
 
@@ -29,9 +34,10 @@ export default function Login() {
     <div className="auth-page">
       <div className="auth-card">
         <div style={{ textAlign: 'center', marginBottom: '8px' }}>
-          <span style={{ fontSize: '1.5rem', fontWeight: 800, background: 'linear-gradient(135deg, #3b7bf5, #6366f1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>STREAMZ</span>
+          <span className="wordmark">Streamz</span>
         </div>
         <h1 className="auth-title">Welcome Back</h1>
+        {banned && <div className="form-error">This account is banned.</div>}
         {error && <div className="form-error">{error}</div>}
         <form onSubmit={handleSignIn} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
           <div>

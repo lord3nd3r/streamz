@@ -347,9 +347,9 @@ export default function LiveChat({ streamId, djId }: { streamId: string, djId: s
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', height: '100%',
-      background: 'rgba(6, 10, 20, 0.85)',
+      background: 'var(--surface)',
       border: '1px solid var(--border-color)',
-      borderRadius: '16px', overflow: 'hidden',
+      borderRadius: 0, overflow: 'hidden',
       fontFamily: 'var(--font-geist-mono), "JetBrains Mono", "Fira Code", monospace',
       position: 'relative',
     }}>

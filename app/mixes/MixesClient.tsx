@@ -29,7 +29,8 @@ export default function MixesClient({ initialMixes }: { initialMixes: any[] }) {
 
         return (
           <div key={mix.id} className="directory-card" style={{ padding: '20px', display: 'flex', gap: '16px', alignItems: 'center' }}>
-            <div 
+            <div
+              className={isThisPlaying ? "art-playing" : undefined}
               style={{ position: 'relative', width: '80px', height: '80px', flexShrink: 0, cursor: 'pointer' }}
               onClick={() => activeStream?.id === mix.id ? togglePlay() : playStream(pseudoStream)}
             >

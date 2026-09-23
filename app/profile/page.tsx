@@ -41,7 +41,7 @@ export default async function ProfilePage() {
         <Topbar userEmail={user.email} />
 
         <div style={{ padding: '28px 32px', maxWidth: '640px' }}>
-          <h1 className="neon-text" style={{ fontSize: '2.2rem', fontWeight: 900, marginBottom: '28px' }}>Profile Settings</h1>
+          <h1 style={{ fontSize: '1.7rem', fontWeight: 560, marginBottom: '28px', letterSpacing: '-0.03em' }}>Profile</h1>
 
           <div className="dash-section">
             <form action={updateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>

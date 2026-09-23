@@ -29,36 +29,23 @@ export default function Topbar({ userEmail }: { userEmail?: string }) {
     router.refresh()
   }
 
-  return (
-    <div className="topbar">
-      <div style={{ marginRight: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <button 
-          onClick={toggleTheme}
-          className="topbar-btn neon-border"
-          style={{ 
-            background: 'var(--surface)', 
-            color: 'var(--accent)', 
-            cursor: 'pointer',
-            fontSize: '10px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}
-        >
-          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)', boxShadow: '0 0 10px var(--accent)' }} />
-          MODE: {theme.toUpperCase()}
-        </button>
-      </div>
+  const themeLabel = theme.charAt(0).toUpperCase() + theme.slice(1)
 
+  return (
+    <div className="header-actions">
+      <button onClick={toggleTheme} className="header-btn header-btn-line" type="button">
+        <span className="theme-dot" />
+        {themeLabel}
+      </button>
       {!userEmail ? (
         <>
-          <a href="/login" className="topbar-btn topbar-btn-outline">Log In</a>
-          <a href="/register" className="topbar-btn topbar-btn-primary">Sign Up</a>
+          <a href="/login" className="header-btn">Log in</a>
+          <a href="/register" className="header-btn header-btn-solid">Sign up</a>
         </>
       ) : (
         <>
-          <span style={{ fontSize: '0.8125rem', color: 'var(--muted)', fontWeight: 600 }}>{userEmail}</span>
-          <button onClick={handleSignOut} className="topbar-btn topbar-btn-outline" style={{ cursor: 'pointer' }}>Log Out</button>
+          <span className="user-email">{userEmail}</span>
+          <button onClick={handleSignOut} className="header-btn" type="button">Log out</button>
         </>
       )}
     </div>

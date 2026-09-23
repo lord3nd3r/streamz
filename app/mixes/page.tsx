@@ -23,11 +23,11 @@ export default async function MixesPage() {
         <Topbar userEmail={user?.email} />
 
         <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto' }}>
-          <h1 className="neon-text" style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '8px' }}>
-            Mix Archive
+          <h1 style={{ fontSize: '1.7rem', fontWeight: 560, marginBottom: '8px', letterSpacing: '-0.03em' }}>
+            Mix archive
           </h1>
-          <p style={{ color: 'var(--muted)', fontSize: '1.1rem', marginBottom: '40px' }}>
-            Listen back to legendary recorded sets from our DJs.
+          <p style={{ color: 'var(--muted)', fontSize: '1rem', marginBottom: '40px' }}>
+            Recorded sets from the station.
           </p>
 
           <MixesClient initialMixes={mixes || []} />

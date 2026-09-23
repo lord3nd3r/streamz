@@ -34,7 +34,7 @@ export default function Register() {
     <div className="auth-page">
       <div className="auth-card">
         <div style={{ textAlign: 'center', marginBottom: '8px' }}>
-          <span style={{ fontSize: '1.5rem', fontWeight: 800, background: 'linear-gradient(135deg, #3b7bf5, #6366f1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>STREAMZ</span>
+          <span className="wordmark">Streamz</span>
         </div>
         <h1 className="auth-title">Create Account</h1>
         {error && <div className="form-error">{error}</div>}

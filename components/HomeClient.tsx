@@ -6,177 +6,113 @@ import Link from 'next/link'
 import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 
+const GENRES = ['Progressive', 'Deep House', 'Techno', 'Trance', 'Breakbeats', 'Drum & Bass', 'Dubstep', 'Hardstyle']
+
+function PlayIcon({ playing }: { playing: boolean }) {
+  if (playing) {
+    return <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+  }
+  return <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+}
+
 export default function Home({ liveStreams: initialLiveStreams, userEmail }: { liveStreams: any[], userEmail?: string }) {
   const { activeStream, isPlaying, playStream, togglePlay } = useAudio()
 
   const handlePlayClick = (e: React.MouseEvent, stream: any) => {
     e.preventDefault()
     e.stopPropagation()
-    if (activeStream?.id === stream.id) {
-      togglePlay()
-    } else {
-      playStream(stream)
-    }
+    if (activeStream?.id === stream.id) togglePlay()
+    else playStream(stream)
   }
+
+  const copyMount = (e: React.MouseEvent<HTMLButtonElement>, stream: any) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const mount = stream.mount.startsWith('/live/') ? stream.mount.substring(6) : stream.mount.replace(/^\//, '')
+    navigator.clipboard.writeText(`https://streamz.lol/live/${mount}`)
+    const btn = e.currentTarget
+    const original = btn.innerText
+    btn.innerText = 'Copied'
+    setTimeout(() => { btn.innerText = original }, 2000)
+  }
+
+  const groups = initialLiveStreams?.length
+    ? Object.entries(
+        initialLiveStreams.reduce((acc: Record<string, any[]>, stream: any) => {
+          const genre = stream.genre || 'Other'
+          if (!acc[genre]) acc[genre] = []
+          acc[genre].push(stream)
+          return acc
+        }, {})
+      )
+    : []
 
   return (
     <>
       <Sidebar active="home" />
-      <div className="main-content" style={{ paddingBottom: '100px' }}>
+      <div className="main-content">
         <Topbar userEmail={userEmail} />
-
-        <div style={{ padding: '28px 32px', display: 'flex', flexDirection: 'column', gap: '40px' }}>
-          
-          {/* ── Hero / Instructions ── */}
-          <section style={{ 
-            background: 'rgba(59, 123, 245, 0.05)', 
-            border: '1px solid var(--border-color)', 
-            borderRadius: '16px', 
-            padding: '32px',
-            position: 'relative',
-            overflow: 'hidden'
-          }}>
-            <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '200px', height: '200px', background: 'var(--accent)', opacity: 0.05, filter: 'blur(60px)', borderRadius: '50%' }} />
-            
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '12px', color: '#fff' }}>
-              Welcome to <span className="neon-text">STREAMZ</span>
-            </h1>
-            <p style={{ color: 'var(--muted)', fontSize: '0.9375rem', lineHeight: 1.6, maxWidth: '600px', marginBottom: '0' }}>
-              🎧 <strong style={{ color: '#fff' }}>Listen</strong>: No registration needed. Just pick a DJ below and enter the club.<br />
-              🎹 <strong style={{ color: '#fff' }}>DJ</strong>: Want to stream your own sets? <a href="/register" style={{ color: 'var(--accent)', fontWeight: 700, textDecoration: 'none' }}>Register here</a> to get your mount points and start playing.
+        <div className="page">
+          <header className="masthead">
+            <h1>On air</h1>
+            <p className="lead">
+              Listen without an account. <Link href="/register">Register</Link> if you want a mount and a show of your own.
             </p>
-          </section>
+          </header>
 
-          {/* ── Live Streams by Genre ── */}
-          {initialLiveStreams && initialLiveStreams.length > 0 ? (
-            Object.entries(
-              initialLiveStreams.reduce((acc: Record<string, any[]>, stream: any) => {
-                const genre = stream.genre || 'Other'
-                if (!acc[genre]) acc[genre] = []
-                acc[genre].push(stream)
-                return acc
-              }, {})
-            ).map(([genre, streams]) => (
-              <section key={genre}>
-                <div className="section-title">🔴 Live Now - {genre}</div>
-                <div className="card-row">
-                  {streams.map((stream) => (
-                    <Link 
-                      key={stream.id} 
-                      href={`/stream/${stream.id}`}
-                      style={{ textDecoration: 'none', color: 'inherit' }}
-                    >
-                      <div 
-                        className={`stream-card ${activeStream?.id === stream.id ? 'neon-border' : ''}`}
-                        style={{ transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}
-                      >
+          {groups.length > 0 ? groups.map(([genre, streams]) => (
+            <section key={genre}>
+              <div className="kicker">{genre}</div>
+              <div className="station-list">
+                {streams.map((stream) => {
+                  const playing = activeStream?.id === stream.id && isPlaying
+                  return (
+                    <Link key={stream.id} href={`/stream/${stream.id}`} className="station-row">
+                      <span style={{ position: 'relative', width: 76, height: 76 }}>
                         <Image
                           src={stream.profiles?.avatar_url || `/art/${(Math.abs(stream.name.charCodeAt(0) % 4) + 1)}.png`}
-                          alt={stream.name}
-                          width={180}
-                          height={180}
-                          className="stream-card-img"
+                          alt=""
+                          width={76}
+                          height={76}
+                          className={playing ? "station-art art-playing" : "station-art"}
                         />
-                        <div className={`stream-card-live ${activeStream?.id === stream.id && isPlaying ? 'pulse-glow' : ''}`}>
-                          <span className="live-dot-sm" />
-                          Live
-                        </div>
-                        
-                        <div className="stream-card-overlay" style={{ opacity: 1, background: 'linear-gradient(0deg, rgba(0,0,0,0.9) 0%, transparent 100%)' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <div>
-                              <div className={`stream-card-title ${activeStream?.id === stream.id ? 'neon-text' : ''}`}>{stream.name}</div>
-                              <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent)', marginBottom: '2px' }}>
-                                DJ {stream.profiles?.username || 'Guest'}
-                              </div>
-                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                <div className="stream-card-meta">
-                                  {stream.listeners_count || 0} listening
-                                </div>
-                                <button 
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    const mount = stream.mount.startsWith('/live/') ? stream.mount.substring(6) : stream.mount.replace(/^\//, '');
-                                    const url = `https://streamz.lol/live/${mount}`;
-                                    navigator.clipboard.writeText(url);
-                                    const btn = e.currentTarget;
-                                    const originalText = btn.innerText;
-                                    btn.innerText = '✅ Copied!';
-                                    setTimeout(() => { btn.innerText = originalText; }, 2000);
-                                  }}
-                                  title="Copy direct MP3 link"
-                                  style={{ 
-                                    background: 'rgba(255,255,255,0.1)', 
-                                    border: 'none', 
-                                    color: 'var(--accent)', 
-                                    fontSize: '10px', 
-                                    padding: '2px 6px', 
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    fontWeight: 700
-                                  }}
-                                >
-                                  🔗 MP3
-                                </button>
-                              </div>
-                            </div>
-                            <div 
-                              onClick={(e) => handlePlayClick(e, stream)}
-                              style={{ 
-                                width: '32px', 
-                                height: '32px', 
-                                borderRadius: '50%', 
-                                background: 'var(--accent)', 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                justifyContent: 'center',
-                                boxShadow: activeStream?.id === stream.id ? '0 0 15px var(--accent)' : 'none',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              {activeStream?.id === stream.id && isPlaying ? (
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-                              ) : (
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="white" style={{ marginLeft: '2px' }}><path d="M8 5v14l11-7z"/></svg>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                        <span className="live-mark">Live</span>
+                      </span>
+                      <span className="station-main">
+                        <span className="station-name">{stream.name}</span>
+                        <span className="station-meta">
+                          DJ {stream.profiles?.username || 'Guest'} · {stream.listeners_count || 0} listening
+                        </span>
+                      </span>
+                      <button type="button" className="text-btn" title="Copy direct MP3 link" onClick={(e) => copyMount(e, stream)}>
+                        MP3
+                      </button>
+                      <button type="button" className="icon-btn" aria-label={playing ? 'Pause' : 'Play'} onClick={(e) => handlePlayClick(e, stream)}>
+                        <PlayIcon playing={playing} />
+                      </button>
                     </Link>
-                  ))}
-                </div>
-              </section>
-            ))
-          ) : (
-            <section>
-              <div className="section-title">🔴 Live Now</div>
-              <div style={{ textAlign: 'center', padding: '48px', background: 'var(--surface)', borderRadius: '12px', color: 'var(--muted)', border: '1px dashed var(--border-color)' }}>
-                The club is empty. Use Mixxx to go live!
+                  )
+                })}
               </div>
+            </section>
+          )) : (
+            <section>
+              <div className="kicker">Live</div>
+              <div className="empty">Nothing is on the air right now.</div>
             </section>
           )}
 
-          {/* ── All Genres Directory ── */}
           <section>
-            <div className="section-title">Directory</div>
-            <div className="card-row">
-              {['Progressive', 'Deep House', 'Techno', 'Trance', 'Breakbeats', 'Drum & Bass', 'Dubstep', 'Hardstyle'].map((g, i) => (
-                <Link key={g} href={`/genre/${encodeURIComponent(g)}`} style={{ textDecoration: 'none' }}>
-                  <div className="stream-card" style={{ height: '120px', transition: 'all 0.2s ease' }}>
-                    <Image src={`/art/${(i % 4) + 1}.png`} alt={g} width={180} height={180} className="stream-card-img" />
-                    <div className="stream-card-overlay" style={{ background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <div className="stream-card-title" style={{ fontSize: '1.2rem', textAlign: 'center' }}>{g}</div>
-                    </div>
-                  </div>
+            <div className="kicker">Genres</div>
+            <div className="genre-grid">
+              {GENRES.map((g, i) => (
+                <Link key={g} href={`/genre/${encodeURIComponent(g)}`} className="genre-tile">
+                  <Image src={`/art/${(i % 4) + 1}.png`} alt="" width={320} height={180} />
+                  <span>{g}</span>
                 </Link>
               ))}
             </div>
           </section>
-
-
-
         </div>
       </div>
     </>

@@ -6,6 +6,7 @@ import Topbar from '@/components/Topbar'
 import RecordingsManager from '@/components/RecordingsManager'
 import AvatarUpload from '@/components/AvatarUpload'
 import type { Database } from '@/types/supabase'
+import { disconnectMount, ensureStationPassword, issueStationPassword, removeStationPassword } from '@/lib/station-secrets'
 
 type LiveStream = Database['public']['Tables']['live_streams']['Row']
 
@@ -42,8 +43,13 @@ export default async function Dashboard() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       const streamId = formData.get('stream_id') as string
+      const { data: existing } = await supabase.from('live_streams').select('mount').eq('id', streamId).eq('dj_id', user.id).maybeSingle()
       const { error } = await supabase.from('live_streams').delete().eq('id', streamId).eq('dj_id', user.id)
       if (error) throw error
+      if (existing?.mount) {
+        removeStationPassword(existing.mount)
+        await disconnectMount(existing.mount)
+      }
       revalidatePath('/')
       revalidatePath('/dashboard')
     } catch (err) {
@@ -93,12 +99,17 @@ export default async function Dashboard() {
       const name = formData.get('name') as string
       const genre = formData.get('genre') as string || 'Other'
       if (!name) return
-      const { data: p } = await supabase.from('profiles').select('username').eq('id', user.id).single()
+      const { data: p } = await supabase.from('profiles').select('username, is_banned').eq('id', user.id).single()
+      if (p?.is_banned) return
       const username = p?.username || 'dj'
       const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
       const mount = `/live/${username}-${slug}-${Date.now().toString().slice(-6)}`
+      issueStationPassword(mount)
       const { error } = await supabase.from('live_streams').insert({ dj_id: user.id, name, mount, genre, is_live: true })
-      if (error) throw error
+      if (error) {
+        removeStationPassword(mount)
+        throw error
+      }
       revalidatePath('/')
       revalidatePath('/dashboard')
     } catch (err) {
@@ -107,6 +118,12 @@ export default async function Dashboard() {
   }
   
   const GENRES = ['Progressive', 'Deep House', 'Techno', 'Trance', 'Breakbeats', 'Drum & Bass', 'Dubstep', 'Hardstyle', 'Psytrance', 'Other']
+  const icecastHost = process.env.ICECAST_HOST || 'localhost'
+  const icecastPort = process.env.ICECAST_PORT || '8000'
+  const stationPasswords: Record<string, string> = {}
+  for (const stream of streams || []) {
+    stationPasswords[stream.mount] = ensureStationPassword(stream.mount)
+  }
 
   return (
     <>
@@ -117,7 +134,7 @@ export default async function Dashboard() {
         <div style={{ padding: '28px 32px', display: 'flex', flexDirection: 'column', gap: '28px' }}>
 
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#fff', margin: 0 }}>
-            Welcome back, {profile?.username || 'DJ'} 🎧
+            Welcome back, {profile?.username || 'DJ'}
           </h1>
 
           <div className="dash-section">
@@ -134,7 +151,7 @@ export default async function Dashboard() {
                 {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
               </select>
               <button type="submit" className="btn-go-live btn-go-live-off" style={{ whiteSpace: 'nowrap' }}>
-                🎧 Go Live
+                Go live
               </button>
             </form>
           </div>
@@ -144,11 +161,12 @@ export default async function Dashboard() {
             <div className="dash-section-title">Your Streams</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {streams && streams.length > 0 ? streams.map((stream: LiveStream) => (
-                <div key={stream.id} className="stream-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div key={stream.id} className="stream-row" style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, color: '#fff', marginBottom: '2px' }}>{stream.name}</div>
+                    <div style={{ fontWeight: 600, color: 'var(--foreground)', marginBottom: '2px' }}>{stream.name}</div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
-                      {stream.mount} • {stream.listeners_count || 0} listeners
+                      {stream.mount} · {stream.listeners_count || 0} listeners
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -205,6 +223,13 @@ export default async function Dashboard() {
                       </button>
                     </form>
                   </div>
+                  </div>
+                  <div className="creds">
+                    <span>Server</span><code>{icecastHost}:{icecastPort}</code>
+                    <span>Mount</span><code>{stream.mount}</code>
+                    <span>Username</span><code>source</code>
+                    <span>Password</span><code>{stationPasswords[stream.mount]}</code>
+                  </div>
                 </div>
               )) : (
                 <p style={{ color: 'var(--muted)', fontSize: '0.875rem' }}>No streams yet. Create one above!</p>
@@ -220,17 +245,9 @@ export default async function Dashboard() {
 
           {/* Config */}
           <div className="config-panel">
-            <div style={{ fontWeight: 700, color: '#fff', marginBottom: '12px' }}>Streaming Config</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '6px 16px', fontSize: '0.8125rem' }}>
-              <span style={{ color: 'var(--muted)' }}>Server</span>
-              <span style={{ color: 'var(--foreground)' }}>{process.env.ICECAST_HOST || 'localhost'}:{process.env.ICECAST_PORT || '8000'}</span>
-              <span style={{ color: 'var(--muted)' }}>Mount</span>
-              <span style={{ color: 'var(--foreground)' }}>/live/[your-mount]</span>
-              <span style={{ color: 'var(--muted)' }}>Format</span>
-              <span style={{ color: 'var(--foreground)' }}>MP3 / AAC (Any Bitrate)</span>
-            </div>
-            <p style={{ marginTop: '12px', fontSize: '0.6875rem', color: 'var(--muted)' }}>
-              Use OBS, BUTT, or IceS source client. Contact admin for source password.
+            <div style={{ fontWeight: 600, marginBottom: '12px' }}>Streaming</div>
+            <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--muted)', lineHeight: 1.5 }}>
+              Each station has its own source password, listed on the station above. In OBS, Mixxx, or BUTT use server {icecastHost}, port {icecastPort}, username source, and that station&apos;s mount and password. Audio is MP3 or AAC.
             </p>
           </div>
 

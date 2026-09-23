@@ -18,10 +18,10 @@ export default function AdminClient({ initialStats, initialUsers, toggleAdminAct
       {/* Stats Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
         {[
-          { label: 'Total Registered', value: initialStats.totalUsers, icon: '👥' },
-          { label: 'Active Streams', value: initialStats.activeStreams, icon: '🔴' },
-          { label: 'Total Listeners', value: initialStats.totalListeners, icon: '🎧' },
-          { label: 'Online Now', value: initialStats.onlineNow, icon: '🟢' }
+          { label: 'Total Registered', value: initialStats.totalUsers },
+          { label: 'Active Streams', value: initialStats.activeStreams },
+          { label: 'Total Listeners', value: initialStats.totalListeners },
+          { label: 'Online Now', value: initialStats.onlineNow }
         ].map(stat => (
           <div key={stat.label} style={{ 
             background: 'var(--surface)', 
@@ -30,8 +30,7 @@ export default function AdminClient({ initialStats, initialUsers, toggleAdminAct
             border: '1px solid var(--border-color)',
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: '2rem', marginBottom: '8px' }}>{stat.icon}</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#fff' }}>{stat.value}</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 560, color: 'var(--foreground)' }}>{stat.value}</div>
             <div style={{ fontSize: '0.8rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{stat.label}</div>
           </div>
         ))}

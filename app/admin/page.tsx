@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 import AdminClient from './AdminClient'
+import { createAdminClient, disconnectMount } from '@/lib/station-secrets'
 
 export const revalidate = 0
 
@@ -61,7 +62,15 @@ export default async function AdminPage() {
 
     const targetId = formData.get('user_id') as string
     const currentStatus = formData.get('current_status') === 'true'
-    await supabase.from('profiles').update({ is_banned: !currentStatus }).eq('id', targetId)
+    const banning = !currentStatus
+    await supabase.from('profiles').update({ is_banned: banning }).eq('id', targetId)
+    if (banning) {
+      const admin = createAdminClient()
+      const { data: mounts } = await admin.from('live_streams').select('mount').eq('dj_id', targetId)
+      for (const row of mounts || []) {
+        if (row.mount) await disconnectMount(row.mount)
+      }
+    }
     revalidatePath('/admin')
   }
 
@@ -87,11 +96,11 @@ export default async function AdminPage() {
         <Topbar userEmail={user.email} />
 
         <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto' }}>
-          <h1 className="neon-text" style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '8px' }}>
-            Admin Control Center
+          <h1 style={{ fontSize: '1.7rem', fontWeight: 560, marginBottom: '8px', letterSpacing: '-0.03em' }}>
+            Admin
           </h1>
-          <p style={{ color: 'var(--muted)', fontSize: '1.1rem', marginBottom: '40px' }}>
-            Real-time site management and user moderation.
+          <p style={{ color: 'var(--muted)', fontSize: '1rem', marginBottom: '40px' }}>
+            Site stats, accounts, and moderation.
           </p>
 
           <AdminClient

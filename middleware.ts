@@ -34,6 +34,26 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('is_banned')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (profile?.is_banned) {
+      await supabase.auth.signOut()
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      url.searchParams.set('banned', '1')
+      const redirectResponse = NextResponse.redirect(url)
+      supabaseResponse.cookies.getAll().forEach((cookie) => {
+        redirectResponse.cookies.set(cookie)
+      })
+      return redirectResponse
+    }
+  }
+
   // Protect authenticated routes
   const isProtectedRoute = request.nextUrl.pathname.startsWith('/dashboard') ||
                            request.nextUrl.pathname.startsWith('/admin') ||

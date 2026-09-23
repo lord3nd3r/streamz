@@ -89,6 +89,8 @@ Audio player → HTTP GET → Icecast :8000/live/[mount]
 | `app/register/page.tsx` | Registration form | Client (static shell) |
 | `app/dashboard/page.tsx` | DJ controls + server actions | Server (dynamic) |
 | `app/profile/page.tsx` | Profile view | Server (dynamic) |
+| `app/api/icecast/auth/route.ts` | Source authentication webhook handler | Server API |
+| `lib/station-secrets.ts` | Station password manager & Icecast source disconnect helper | Utility |
 | `middleware.ts` | Auth guard + session refresh | Edge |
 
 ### UI Components

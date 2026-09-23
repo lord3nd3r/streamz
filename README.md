@@ -215,6 +215,8 @@ streamz/
 │   ├── genre/[name]/page.tsx   # Genre-filtered stream listing
 │   ├── mixes/page.tsx          # Published mix archive
 │   └── api/
+│       ├── icecast/
+│       │   └── auth/route.ts   # GET/POST — Icecast source authentication webhook
 │       └── recordings/
 │           ├── route.ts        # GET — list recordings
 │           └── [name]/
@@ -235,6 +237,7 @@ streamz/
 ├── context/
 │   └── AudioContext.tsx        # Global audio state with auto-recovery
 ├── lib/
+│   ├── station-secrets.ts      # Station passwords manager & Icecast source disconnect helper
 │   └── supabase/
 │       ├── client.ts           # Browser Supabase client
 │       └── server.ts           # Server Supabase client (async)
@@ -242,11 +245,13 @@ streamz/
 │   ├── sync-listeners.js       # Resilient Icecast↔DB sync daemon
 │   └── Dockerfile.sync         # Container for sync service
 ├── public/
-│   └── art/                    # Generated channel artwork (1–4.png)
+│   ├── art/                    # Generated channel artwork (1–4.png)
+│   └── theme-pro.css           # Modern pro theme definitions
 ├── types/
 │   └── supabase.ts             # Database types
 ├── middleware.ts                # Auth guard (session refresh)
 ├── docker-compose.yml          # Icecast + Postgres + Next.js
+├── docker-entrypoint.sh        # Minimal container entrypoint
 ├── icecast.xml                 # Icecast server configuration
 ├── Dockerfile                  # Production build
 ├── recordings/                 # Icecast dump files (MP3s)
@@ -273,6 +278,7 @@ streamz/
 | `/genre/[name]` | Server | No | Genre-filtered stream listing |
 | `/mixes` | Server | No | Published mix archive |
 | `/admin` | Server | Yes (Admin) | Admin control center — stats, user management |
+| `/api/icecast/auth` | API | Webhook | `GET`/`POST` — Icecast DJ source authentication |
 | `/api/recordings` | API | Yes | `GET` — list MP3 recordings |
 | `/api/recordings/[name]` | API | Yes | `DELETE` — remove a recording |
 

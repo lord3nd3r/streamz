@@ -107,13 +107,54 @@ Deletes a specific `.mp3` recording file.
 
 ---
 
+## Icecast Authentication
+
+### Source Authentication Endpoint
+
+```
+GET /api/icecast/auth
+POST /api/icecast/auth
+```
+
+Authenticates Icecast DJ source connections for dynamic mount points using station-specific passwords or global fallback credentials.
+
+**Authentication:** Handled via URL parameters / form data from Icecast source auth webhooks.
+
+**Parameters:**
+
+| Parameter | Location | Type | Description |
+|-----------|----------|------|-------------|
+| `action` | Query / Body | `string` | Icecast webhook action (e.g. `stream_auth`) |
+| `mount` | Query / Body | `string` | Stream mount point (e.g. `/live/djname-stream`) |
+| `pass` / `password` | Query / Body | `string` | Source password provided by DJ encoder |
+| `user` | Query / Body | `string` | Optional username provided by DJ encoder |
+
+**Response `200`:**
+
+```
+icecast-auth-user: 1
+```
+(HTTP header `icecast-auth-user: 1` grants access to stream on the requested mount)
+
+**Response `401` / `403`:**
+
+```json
+{
+  "error": "Forbidden"
+}
+```
+
+**Source:** [`app/api/icecast/auth/route.ts`](../app/api/icecast/auth/route.ts) | [`lib/station-secrets.ts`](../lib/station-secrets.ts)
+
+---
+
 ## Server Actions
 
 Server actions are defined inline in `app/dashboard/page.tsx` and invoked via HTML form submissions.
 
 ### `createStream`
 
-Creates a new live stream mount point.
+Creates a new live stream mount point and issues a unique station password.
 
 **Trigger:** Form submission in the "Start New Stream" section
 
@@ -127,8 +168,9 @@ Creates a new live stream mount point.
 1. Authenticates the user
 2. Looks up the user's username from `profiles`
 3. Generates a mount path: `/live/{username}-{slug}-{timestamp}`
-4. Inserts a row into `live_streams` with `is_live: true`
-5. Revalidates `/` and `/dashboard`
+4. Issues and securely stores a unique station password via `ensureStationPassword()`
+5. Inserts a row into `live_streams` with `is_live: true`
+6. Revalidates `/` and `/dashboard`
 
 ---
 
@@ -148,4 +190,5 @@ Toggles a stream between live and offline.
 **Behavior:**
 1. Authenticates the user
 2. Flips `is_live` for the matching stream (scoped to the current user's `dj_id`)
-3. Revalidates `/` and `/dashboard`
+3. Disconnects any active Icecast source if going offline via `disconnectMount()`
+4. Revalidates `/` and `/dashboard`

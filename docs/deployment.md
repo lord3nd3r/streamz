@@ -155,7 +155,10 @@ Key points:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `ICECAST_SOURCE_PASSWORD` | `changeme` | Password for DJ source connections |
+| `STATION_SECRETS_PATH` | `/config/station-secrets.json` | Path for persistent station password store |
+| `ICECAST_CONFIG` | `/config/icecast.xml` | Path to Icecast XML configuration file |
+| `ICECAST_INTERNAL_URL` | `http://icecast:8000` | Internal network URL for Icecast admin API calls |
+| `ICECAST_SOURCE_PASSWORD` | `changeme` | Global fallback password for DJ source connections |
 | `ICECAST_ADMIN_PASSWORD` | `changeme` | Icecast admin panel password |
 | `ICECAST_ADMIN_USERNAME` | `admin` | Icecast admin panel username |
 | `POSTGRES_PASSWORD` | `postgres` | Postgres database password |

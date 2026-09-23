@@ -23,13 +23,18 @@ The Icecast server is configured via [`icecast.xml`](../icecast.xml) and runs as
 
 ### Authentication
 
-| Credential | Environment Variable | Default |
-|-----------|---------------------|---------|
-| Source password | `ICECAST_SOURCE_PASSWORD` | `changeme` |
-| Admin username | `ICECAST_ADMIN_USERNAME` | `admin` |
-| Admin password | `ICECAST_ADMIN_PASSWORD` | `changeme` |
+Streamz uses dynamic per-station passwords via the Icecast URL authentication webhook (`/api/icecast/auth`). 
 
-> ⚠️ **Change all default passwords before deploying to production.**
+| Mechanism | Storage / Variable | Description |
+|-----------|--------------------|-------------|
+| Station Password | `/config/station-secrets.json` | Generated per mount point automatically upon stream creation |
+| Webhook Auth | `/api/icecast/auth` | Icecast server calls Next.js app to authenticate source connections |
+| Global Fallback | `source-password` in `icecast.xml` | Fallback password if station password is not found |
+| Admin Username | `admin` | Icecast admin panel username |
+| Admin Password | `ICECAST_ADMIN_PASSWORD` / `icecast.xml` | Icecast admin panel password |
+
+> ⚠️ **Each stream mount gets a unique station password shown in the DJ Dashboard.**
+
 
 ### Auto-Recording
 

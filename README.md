@@ -1,327 +1,199 @@
 # Streamz
 
-**Live DJ streaming platform** built with Next.js 16, Supabase, and Icecast — styled after [DI.FM](https://di.fm).
+A modern **Live DJ Streaming & Audio Platform** built with **Next.js 16**, **Supabase**, and **Icecast**.
 
-DJs register, create stream mounts, and broadcast live audio through Icecast. Listeners browse live streams grouped by electronic music genres in a rich, art-heavy interface with horizontal-scrolling card rows, a fixed sidebar, a sticky top bar, and a global persistent audio player featuring a WebGL MilkDrop-style audio visualizer with 8 shader presets. Recordings are automatically captured and managed through the dashboard.
-
----
-
-## Design
-
-The UI is inspired by **DI.FM** (Digitally Imported) — a premium electronic music streaming platform:
-
-- **Deep navy palette** — `#0d1527` background, `#162040` card surfaces, `#3b7bf5` blue accent
-- **Fixed left sidebar** — navigation for Home, Dashboard, Mix Archive, Admin Panel
-- **Sticky top bar** — auth state aware (Login/Sign Up or user email)
-- **Horizontal-scrolling card rows** — featured hero cards (wide) and channel tiles (square)
-- **Art-heavy stream cards** — full-bleed artwork (procedural or custom), live badges, hover scale, and quick 'Direct MP3' copy links
-- **Persistent Global Player** — audio continues playing while navigating the site
-- **Audio Visualizer** — WebGL MilkDrop/Geiss-inspired visualizer with 8 GLSL shader presets featuring feedback loops, warp tunnels, plasma, kaleidoscopes, fractals, and fullscreen mode
-- **Real-time Chat** — Modernized IRCv3-style chat with `/me` action support, deterministic nick coloring, timestamps, and DJ/Admin moderation via context menus (Delete, Mod, Ban)
-- **Mix Archive** — DJs can publish recorded sets (VODs) to a public library
-- **Admin Control Center** — Site-wide stats, user management, and moderation tools protected by server-side verification
-- **Mobile Responsive** — fluid layout with collapsed sidebar for phone browsing
-- **Custom Cover Art** — DJs can upload their own branding to streams and mixes
+DJs can register, manage stream mount points, obtain secure station source credentials, and stream live audio via Icecast. Listeners can explore live streams, browse genre directories, listen via a persistent docked audio player with a WebGL visualizer, participate in real-time chat, and listen to recorded mixes.
 
 ---
 
-## Architecture
+## Key Features
 
-```
-┌─────────────┐     ┌──────────────┐     ┌──────────────┐     ┌─────────────────┐
-│   Browser    │────▶│    Nginx     │────▶│  Next.js 16  │────▶│    Supabase      │
-│  (Listener)  │◀────│ (HTTPS/Proxy)│◀────│  (App Router)│◀────│  (Auth + DB)     │
-└─────────────┘     └──────┬───────┘     └──────┬───────┘     └─────────────────┘
-                           │                    │
-┌─────────────┐     ┌──────┴───────┐     ┌──────┴───────┐     ┌─────────────────┐
-│  OBS / Mixxx│────▶│   Icecast    │◀────│ Sync Service │     │   recordings/    │
-│  (DJ Source) │     │  (Port 8000) │     │  (Loop Sync) │     │   (MP3 dumps)    │
-└─────────────┘     └──────────────┘     └──────────────┘     └─────────────────┘
-```
-
-| Component | Purpose |
-|-----------|---------|
-| **Next.js 16** | Frontend + API routes + server actions (Turbopack) |
-| **Supabase** | Authentication, Postgres database, and RLS policies |
-| **Icecast** | Audio streaming server (Ogg/MP3) |
-| **Nginx** | SSL termination (Certbot) and secure audio proxying |
-| **Sync Service** | Real-time background sync between Icecast and DB |
-| **Docker Compose** | Orchestrates Next.js, Icecast, Postgres, and Sync |
+- **Dynamic DJ Streaming & Mount Management**: DJs create and manage audio mounts (`/live/...`) with station secrets authenticated by an Icecast HTTP webhook endpoint.
+- **Station Secrets & Security**: Automatic per-mount station passwords, secure lock-backed password store, and source disconnect (`killsource`) controls.
+- **Persistent Global Audio Player**: Fixed bottom player bar with stream recovery, auto-reconnect backoff, stall detection, and volume control.
+- **WebGL Audio Visualizer**: 8 MilkDrop/Geiss-inspired GLSL shader presets (Warp Tunnel, Plasma Morph, Kaleidoscope, Starfield, Fractal Wave, Liquid Mirror, Geiss Pulse, Acid Worm) with feedback loops and full-screen support.
+- **IRCv3-Style Live Chat**: Real-time per-stream chat with deterministic nick coloring, `/me` action support, command history, and DJ/Admin moderation (delete message, mod user, ban user).
+- **Recorded Mix Archive**: DJs can record, dump, and publish live sets to a public mix library.
+- **Admin Control Center**: User moderation, site statistics, stream management, and role promotion protected by server-side verification.
+- **Sleek Minimalist Pro Theme**: Custom dark mode design system with theme presets (`dark`, `neon`, `cyber`), border-less chrome, and responsive mobile layout.
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology | Version |
-|-------|-----------|---------|
+| Component | Technology | Version |
+|-----------|------------|---------|
 | Framework | Next.js (App Router, Turbopack) | 16.2.4 |
 | Language | TypeScript | 5.x |
-| UI | React | 19.2.4 |
-| Styling | Tailwind CSS 4 + custom CSS design system | 4.x |
-| Auth & DB | Supabase (`@supabase/ssr`) | 0.10.x |
-| Streaming | Icecast | 2.x |
-| Containerization | Docker Compose | v2 |
+| UI Library | React | 19.2.4 |
+| Styling | Custom CSS Design System + Tailwind CSS | 4.x |
+| Auth & Database | Supabase (`@supabase/ssr`, `@supabase/supabase-js`) | 0.10.x / 2.x |
+| Streaming Server | Icecast | 2.x |
+| Containerization | Docker & Docker Compose | v2 |
 
 ---
 
-## Quick Start
+## Architecture Overview
 
-### Prerequisites
-
-- **Node.js** ≥ 20
-- **Docker** & **Docker Compose** (for Icecast + Postgres)
-- A **Supabase** project (cloud or self-hosted)
-
-### 1. Clone & Install
-
-```bash
-git clone <repo-url> streamz
-cd streamz
-npm install
 ```
-
-### 2. Configure Environment
-
-Copy the example and fill in your values:
-
-```bash
-cp .env.local.example .env.local
-```
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | ✅ |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous/public key | ✅ |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (server-only) | ✅ |
-| `ICECAST_HOST` | Icecast server hostname (shown in dashboard) | Optional |
-| `ICECAST_PORT` | Icecast server port (shown in dashboard) | Optional |
-
-### 3. Set Up the Database
-
-Run the following SQL block in your Supabase SQL Editor to initialize the entire schema, storage buckets, and admin permissions:
-
-```sql
--- 1. Tables & Columns
-CREATE TABLE IF NOT EXISTS public.profiles (
-  id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
-  username TEXT UNIQUE,
-  full_name TEXT,
-  avatar_url TEXT,
-  role TEXT DEFAULT 'dj',
-  is_admin BOOLEAN DEFAULT false,
-  is_banned BOOLEAN DEFAULT false,
-  last_seen TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS public.live_streams (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  dj_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
-  mount TEXT NOT NULL UNIQUE,
-  genre TEXT DEFAULT 'Other',
-  is_live BOOLEAN DEFAULT false,
-  listeners_count INTEGER DEFAULT 0,
-  record_stream BOOLEAN DEFAULT false,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS public.chat_bans (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  stream_id UUID REFERENCES public.live_streams(id) ON DELETE CASCADE,
-  banned_username TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(stream_id, banned_username)
-);
-
-CREATE TABLE IF NOT EXISTS public.chat_mods (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  stream_id UUID REFERENCES public.live_streams(id) ON DELETE CASCADE,
-  mod_username TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(stream_id, mod_username)
-);
-
-CREATE TABLE IF NOT EXISTS public.published_mixes (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  dj_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
-  title TEXT NOT NULL,
-  filename TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- 2. Views & Storage
-CREATE OR REPLACE VIEW site_stats AS
-SELECT 
-  (SELECT COUNT(*) FROM public.profiles) as total_users,
-  (SELECT COUNT(*) FROM public.live_streams WHERE is_live = true) as active_streams,
-  (SELECT SUM(listeners_count) FROM public.live_streams WHERE is_live = true) as total_listeners;
-
-INSERT INTO storage.buckets (id, name, public) VALUES ('covers', 'covers', true) ON CONFLICT (id) DO NOTHING;
-
--- 3. Security Policies (RLS)
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.live_streams ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.chat_bans ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.chat_mods ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.published_mixes ENABLE ROW LEVEL SECURITY;
-
--- 4. Initial Admin (Replace with your email)
-UPDATE public.profiles SET is_admin = true WHERE id IN (SELECT id FROM auth.users WHERE email = 'lord3nd3r@gmail.com');
-```
-
-### 4. Start Services
-
-```bash
-# Start Icecast + Postgres
-docker compose up -d
-
-# Start the dev server
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000).
-
-### 5. (Optional) Docker Passwords
-
-Override default Icecast/Postgres passwords via environment variables or a `.env` file:
-
-```bash
-ICECAST_SOURCE_PASSWORD=your_source_pw
-ICECAST_ADMIN_PASSWORD=your_admin_pw
-POSTGRES_PASSWORD=your_db_pw
+┌────────────────────────────────────────────────────────────────────────┐
+│                               Clients                                  │
+│                                                                        │
+│   ┌──────────────┐          ┌──────────────┐     ┌──────────────────┐  │
+│   │   Listener   │          │  DJ Browser  │     │ DJ Encoder (OBS) │  │
+│   │   Browser    │          │  (Dashboard) │     │ (BUTT / IceS)    │  │
+│   └──────┬───────┘          └──────┬───────┘     └────────┬─────────┘  │
+└──────────┼─────────────────────────┼──────────────────────┼────────────┘
+           │                         │                      │
+           ▼                         ▼                      ▼
+┌─────────────────────────────────────────┐        ┌──────────────────┐
+│              Next.js 16                  │        │    Icecast 2     │
+│          (App Router & API)             │◄───────┤ (Audio Server)   │
+│                                         │ Webhook│                  │
+│ • Server Components & Actions           │ Auth   │ • Source Input   │
+│ • Icecast Webhook Auth (/api/icecast/auth)       │ • Stream Output  │
+│ • Station Secrets Manager (station-secrets.ts)   │ • MP3 Dump Files │
+│ • Middleware Auth Guard                 │        └────────┬─────────┘
+└────────────────────┬────────────────────┘                 │
+                     │                                      │
+                     ▼                                      ▼
+┌─────────────────────────────────────────┐        ┌──────────────────┐
+│              Supabase                   │        │   recordings/    │
+│  (Auth, Postgres DB, Row Level Security)│        │ (MP3 Dump Files) │
+└─────────────────────────────────────────┘        └──────────────────┘
 ```
 
 ---
 
-## Project Structure
+## Repository Structure
 
 ```
 streamz/
 ├── app/
-│   ├── layout.tsx              # Root layout (Geist fonts) + Global SEO Metadata
-│   ├── page.tsx                # Home — featured, live, channels
-│   ├── globals.css             # DI.FM-style design system
-│   ├── sitemap.ts              # Automated sitemap.xml generator
-│   ├── robots.ts               # Automated robots.txt generator
-│   ├── login/page.tsx          # Login (client component)
-│   ├── register/page.tsx       # Registration (client component)
-│   ├── dashboard/page.tsx      # DJ dashboard (server actions to create, update, delete streams)
-│   ├── profile/page.tsx        # User profile viewer
+│   ├── layout.tsx                # Root layout with Geist font & SEO metadata
+│   ├── page.tsx                  # Home page — live streams, hero cards, channel directory
+│   ├── globals.css               # Core CSS design system
+│   ├── login/page.tsx            # Login interface
+│   ├── register/page.tsx         # User & DJ registration
+│   ├── dashboard/page.tsx        # DJ control panel — stream & recording management
+│   ├── profile/page.tsx          # Profile manager
 │   ├── admin/
-│   │   ├── page.tsx            # Admin control center (server component)
-│   │   └── AdminClient.tsx     # Admin actions (ban, promote)
-│   ├── stream/[id]/page.tsx    # Stream detail page with player, chat, visualizer
-│   ├── genre/[name]/page.tsx   # Genre-filtered stream listing
-│   ├── mixes/page.tsx          # Published mix archive
+│   │   ├── page.tsx              # Admin control center (server view)
+│   │   └── AdminClient.tsx       # Admin moderation actions
+│   ├── stream/[id]/page.tsx      # Stream details, visualizer, & chat shell
+│   ├── genre/[name]/page.tsx     # Genre directory filter
+│   ├── mixes/page.tsx            # Published mix archive
 │   └── api/
 │       ├── icecast/
-│       │   └── auth/route.ts   # GET/POST — Icecast source authentication webhook
+│       │   └── auth/route.ts     # Icecast source authentication webhook
 │       └── recordings/
-│           ├── route.ts        # GET — list recordings
+│           ├── route.ts          # GET — list recordings
 │           └── [name]/
-│               └── route.ts    # DELETE — remove a recording
+│               └── route.ts      # DELETE — remove a recording
 ├── components/
-│   ├── Sidebar.tsx             # Fixed left navigation sidebar
-│   ├── Topbar.tsx              # Sticky top bar (auth-aware)
-│   ├── RecordingsManager.tsx   # Client component for recordings
-│   ├── GlobalPlayer.tsx        # Persistent audio player fixed to the bottom
-│   ├── HomeClient.tsx          # Homepage client view with genre grouping
-│   ├── Visualizer.tsx          # WebGL MilkDrop-style visualizer (entry point)
-│   ├── LiveChat.tsx            # Per-stream real-time chat with DJ moderation
-│   ├── Presence.tsx            # User presence tracking (last_seen heartbeat)
-│   ├── AvatarUpload.tsx        # DJ cover art / avatar upload
+│   ├── Sidebar.tsx               # Left navigation bar
+│   ├── Topbar.tsx                # Auth-aware top header
+│   ├── GlobalPlayer.tsx          # Docked persistent audio player
+│   ├── HomeClient.tsx            # Home view channel & stream grid
+│   ├── LiveChat.tsx              # Real-time chat & DJ moderation menu
+│   ├── Visualizer.tsx            # WebGL MilkDrop-inspired visualizer component
+│   ├── RecordingsManager.tsx     # Recording file list and deletion controls
+│   ├── Presence.tsx              # User presence heartbeat component
+│   ├── AvatarUpload.tsx          # Cover art and avatar upload component
 │   └── visualizer/
-│       ├── engine.ts           # WebGL engine with feedback-loop rendering
-│       └── shaders.ts          # 8 GLSL fragment shader presets
+│       ├── engine.ts             # WebGL feedback-loop rendering engine
+│       └── shaders.ts            # 8 GLSL shader presets
 ├── context/
-│   └── AudioContext.tsx        # Global audio state with auto-recovery
+│   └── AudioContext.tsx          # Global audio player state & reconnect manager
 ├── lib/
-│   ├── station-secrets.ts      # Station passwords manager & Icecast source disconnect helper
+│   ├── station-secrets.ts        # Station secrets store & Icecast killsource utility
 │   └── supabase/
-│       ├── client.ts           # Browser Supabase client
-│       └── server.ts           # Server Supabase client (async)
-├── scripts/
-│   ├── sync-listeners.js       # Resilient Icecast↔DB sync daemon
-│   └── Dockerfile.sync         # Container for sync service
+│       ├── client.ts             # Browser Supabase client
+│       └── server.ts             # Async Server Supabase client
 ├── public/
-│   ├── art/                    # Generated channel artwork (1–4.png)
-│   └── theme-pro.css           # Modern pro theme definitions
-├── types/
-│   └── supabase.ts             # Database types
-├── middleware.ts                # Auth guard (session refresh)
-├── docker-compose.yml          # Icecast + Postgres + Next.js
-├── docker-entrypoint.sh        # Minimal container entrypoint
-├── icecast.xml                 # Icecast server configuration
-├── Dockerfile                  # Production build
-├── recordings/                 # Icecast dump files (MP3s)
-└── docs/                       # Documentation
-    ├── architecture.md         # System design & data flow
-    ├── database.md             # Schema, tables, RLS policies
-    ├── api.md                  # API route reference
-    ├── streaming.md            # Icecast setup & DJ guide
-    └── deployment.md           # Production deployment guide
+│   └── theme-pro.css             # Minimalist pro dark theme stylesheet
+├── scripts/
+│   ├── sync-listeners.js         # Icecast-to-Supabase listener sync daemon
+│   └── Dockerfile.sync           # Sync daemon container configuration
+├── docker-compose.yml            # Container orchestration
+├── docker-entrypoint.sh          # Minimal container entrypoint
+├── icecast.xml                   # Icecast server configuration
+├── Dockerfile                    # Next.js production build
+└── docs/                         # Detailed architecture & API documentation
 ```
 
 ---
 
-## Pages & Routes
+## Environment Variables
 
-| Route | Type | Auth | Description |
-|-------|------|------|-------------|
-| `/` | Server | No | Home — featured hero cards, live streams, popular channels |
-| `/login` | Client | No | Branded login card with gradient logo |
-| `/register` | Client | No | Registration with DJ Name field |
-| `/dashboard` | Server | Yes | DJ control panel — streams, recordings, config |
-| `/profile` | Server | Yes | User profile editor |
-| `/stream/[id]` | Client | No | Stream detail — player, visualizer, live chat |
-| `/genre/[name]` | Server | No | Genre-filtered stream listing |
-| `/mixes` | Server | No | Published mix archive |
-| `/admin` | Server | Yes (Admin) | Admin control center — stats, user management |
-| `/api/icecast/auth` | API | Webhook | `GET`/`POST` — Icecast DJ source authentication |
-| `/api/recordings` | API | Yes | `GET` — list MP3 recordings |
-| `/api/recordings/[name]` | API | Yes | `DELETE` — remove a recording |
+| Variable | Scope | Description |
+|----------|-------|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Public | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public | Supabase anonymous API key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-only | Supabase service role key (bypasses RLS for admin tasks) |
+| `STATION_SECRETS_PATH` | Server-only | Path for station passwords file (default: `/config/station-secrets.json`) |
+| `ICECAST_CONFIG` | Server-only | Path to Icecast XML configuration (default: `/config/icecast.xml`) |
+| `ICECAST_INTERNAL_URL` | Server-only | Internal Icecast admin URL (default: `http://icecast:8000`) |
+| `ICECAST_HOST` | Public/Server | Icecast server hostname shown to DJs |
+| `ICECAST_PORT` | Public/Server | Icecast server port (default: `8000`) |
 
 ---
 
-## Authentication Flow
+## Getting Started
 
-1. **Middleware** (`middleware.ts`) runs on every non-API/static request
-2. Creates a Supabase client using `getAll`/`setAll` cookie pattern
-3. Calls `supabase.auth.getUser()` to validate the session
-4. Redirects:
-   - `/dashboard/*` → `/login` if not authenticated
-   - `/login` → `/dashboard` if already authenticated
-5. Server components use `await createClient()` (async `cookies()` in Next.js 16)
-6. Client components use `createClient()` from `@supabase/ssr` browser client
-
----
-
-## Development
+### 1. Installation
 
 ```bash
-npm run dev       # Start dev server (Turbopack)
-npm run build     # Production build
-npm run start     # Start production server
-npm run lint      # ESLint
+git clone <repository-url> streamz
+cd streamz
+npm install
 ```
+
+### 2. Environment Setup
+
+Create `.env.local` based on required variables:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
+
+### 3. Database Schema Setup
+
+Execute schema initialization in the Supabase SQL Editor:
+- `profiles` table (username, full_name, avatar_url, role, is_admin, is_banned)
+- `live_streams` table (dj_id, name, mount, genre, is_live, listeners_count, record_stream)
+- `chat_bans` and `chat_mods` tables
+- `published_mixes` table
+- `site_stats` view
+
+### 4. Running the Application
+
+```bash
+# Start Icecast + Postgres infrastructure via Docker
+docker compose up -d
+
+# Start Next.js development server
+npm run dev
+```
+
+---
+
+## Available Scripts
+
+- `npm run dev`: Starts the Next.js development server with Turbopack.
+- `npm run build`: Compiles production build.
+- `npm run start`: Starts production server.
+- `npm run lint`: Runs ESLint analysis.
 
 ---
 
 ## Documentation
 
-Detailed guides are in the [`docs/`](docs/) folder:
-
-| Document | Contents |
-|----------|----------|
-| [Architecture](docs/architecture.md) | System design, component diagram, data flow |
-| [Database](docs/database.md) | Supabase schema, tables, types, RLS policies |
-| [API Reference](docs/api.md) | REST endpoints, request/response formats |
-| [Streaming Guide](docs/streaming.md) | Icecast config, OBS/IceS setup, mount points |
-| [Deployment](docs/deployment.md) | Docker production, env vars, reverse proxy |
-
----
-
-## License
-
-Private project.
+Comprehensive documentation is available in the [`docs/`](docs/) directory:
+- [Architecture](docs/architecture.md): Deep dive into system design and data flows.
+- [API Reference](docs/api.md): REST endpoints and server action contracts.
+- [Database Schema](docs/database.md): Database tables and RLS security policies.
+- [Streaming Guide](docs/streaming.md): Icecast configuration and encoder setup (OBS, BUTT, IceS).
+- [Deployment](docs/deployment.md): Docker Compose production setup and reverse proxy guidance.

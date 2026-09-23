@@ -11,3 +11,6 @@ recordings
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+public/sadspice.tbz2
+*.tbz2

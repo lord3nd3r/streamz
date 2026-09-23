@@ -50,5 +50,9 @@
 
     <mount type="default">
         <public>0</public>
+        <authentication type="url">
+            <option name="stream_auth" value="http://nextjs:3000/api/icecast/auth"/>
+            <option name="auth_header" value="icecast-auth-user: 1"/>
+        </authentication>
     </mount>
 </icecast>

@@ -1,5 +1,7 @@
 # Streamz
 
+[![Donate - PayPal](https://img.shields.io/badge/Donate-PayPal-0070ba?style=for-the-badge&logo=paypal&logoColor=white)](https://3nd3r.net/paypal) [![Donate - BTC](https://img.shields.io/badge/Donate-BTC-f7931a?style=for-the-badge&logo=bitcoin&logoColor=white)](https://3nd3r.net/btc)
+
 A modern **Live DJ Streaming & Audio Platform** built with **Next.js 16**, **Supabase**, and **Icecast**.
 
 DJs can register, manage stream mount points, obtain secure station source credentials, and stream live audio via Icecast. Listeners can explore live streams, browse genre directories, listen via a persistent docked audio player with a WebGL visualizer, participate in real-time chat, and listen to recorded mixes.
